@@ -38,7 +38,7 @@
       "When set to left or right, the bubble appears on the correct side",
       "An automatic mode picks the side with the most available space"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
