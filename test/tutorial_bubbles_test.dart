@@ -18,6 +18,68 @@ void main() {
     expect(find.byKey(childKey), findsOneWidget);
   });
 
+  testWidgets(
+      'TutorialBubble does not wrap its child in a ScaleTransition by default',
+      (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    expect(find.byType(ScaleTransition), findsNothing);
+  });
+
+  testWidgets(
+      'TutorialBubble wraps its content in a ScaleTransition when tap animation is enabled',
+      (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          enableTapScaleAnimation: true,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    expect(find.byType(ScaleTransition), findsOneWidget);
+  });
+
+  testWidgets(
+      'TutorialBubble plays a spring-like scale animation and returns to original scale when tapped',
+      (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          enableTapScaleAnimation: true,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final scaleTransitionFinder = find.byType(ScaleTransition);
+    expect(scaleTransitionFinder, findsOneWidget);
+
+    Animation<double> animation =
+        tester.widget<ScaleTransition>(scaleTransitionFinder).scale;
+
+    // Initial scale should be at the resting value.
+    expect(animation.value, closeTo(1.0, 0.001));
+
+    await tester.tap(find.byType(TutorialBubble));
+    await tester.pumpAndSettle();
+
+    // After the animation completes, the scale returns to the resting value.
+    animation =
+        tester.widget<ScaleTransition>(scaleTransitionFinder).scale;
+    expect(animation.value, closeTo(1.0, 0.001));
+  });
+
   testWidgets('TutorialTextBubble renders the provided text', (tester) async {
     const text = 'Hello bubble';
 

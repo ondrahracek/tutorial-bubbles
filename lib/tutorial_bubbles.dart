@@ -25,6 +25,8 @@ class TutorialBubble extends StatelessWidget {
     this.haloColor,
     this.haloBlurRadius = 16,
     this.haloSpreadRadius = 2,
+    this.enableTapScaleAnimation = false,
+    this.onTap,
   });
 
   final Widget child;
@@ -48,44 +50,165 @@ class TutorialBubble extends StatelessWidget {
   /// Spread radius for the halo glow.
   final double haloSpreadRadius;
 
+  /// Whether tapping the bubble should trigger a spring-like
+  /// scale animation.
+  final bool enableTapScaleAnimation;
+
+  /// Optional tap callback invoked when the bubble is tapped.
+  ///
+  /// When [enableTapScaleAnimation] is true, the callback is invoked
+  /// and the scale animation plays.
+  final VoidCallback? onTap;
+
   static const Color _defaultBackgroundColor = Color(0xFF303030);
 
   @override
   Widget build(BuildContext context) {
+    return _TutorialBubbleBody(
+      backgroundColor: backgroundColor,
+      backgroundGradient: backgroundGradient,
+      haloEnabled: haloEnabled,
+      haloColor: haloColor,
+      haloBlurRadius: haloBlurRadius,
+      haloSpreadRadius: haloSpreadRadius,
+      enableTapScaleAnimation: enableTapScaleAnimation,
+      onTap: onTap,
+      child: child,
+    );
+  }
+}
+
+class _TutorialBubbleBody extends StatefulWidget {
+  const _TutorialBubbleBody({
+    required this.child,
+    required this.backgroundColor,
+    required this.backgroundGradient,
+    required this.haloEnabled,
+    required this.haloColor,
+    required this.haloBlurRadius,
+    required this.haloSpreadRadius,
+    required this.enableTapScaleAnimation,
+    required this.onTap,
+  });
+
+  final Widget child;
+  final Color? backgroundColor;
+  final Gradient? backgroundGradient;
+  final bool haloEnabled;
+  final Color? haloColor;
+  final double haloBlurRadius;
+  final double haloSpreadRadius;
+  final bool enableTapScaleAnimation;
+  final VoidCallback? onTap;
+
+  @override
+  State<_TutorialBubbleBody> createState() => _TutorialBubbleBodyState();
+}
+
+class _TutorialBubbleBodyState extends State<_TutorialBubbleBody>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _controller;
+  Animation<double>? _scaleAnimation;
+
+  void _ensureController() {
+    if (_controller != null) {
+      return;
+    }
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      value: 1.0,
+    );
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller!,
+      curve: Curves.elasticOut,
+    );
+  }
+
+  void _handleTap() {
+    widget.onTap?.call();
+
+    if (!widget.enableTapScaleAnimation) {
+      return;
+    }
+
+    _ensureController();
+
+    _controller!
+      ..stop()
+      ..value = 0.9
+      ..animateTo(
+        1.0,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.elasticOut,
+      );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final Color defaultBackground =
-        backgroundColor ?? _defaultBackgroundColor;
+        widget.backgroundColor ?? TutorialBubble._defaultBackgroundColor;
 
     final Color haloFallbackColor =
-        backgroundGradient == null ? defaultBackground : _defaultBackgroundColor;
+        widget.backgroundGradient == null
+            ? defaultBackground
+            : TutorialBubble._defaultBackgroundColor;
 
     final List<BoxShadow>? boxShadow =
-        (haloEnabled || haloColor != null)
+        (widget.haloEnabled || widget.haloColor != null)
             ? <BoxShadow>[
                 BoxShadow(
-                  color: haloColor ?? haloFallbackColor,
-                  blurRadius: haloBlurRadius,
-                  spreadRadius: haloSpreadRadius,
+                  color: widget.haloColor ?? haloFallbackColor,
+                  blurRadius: widget.haloBlurRadius,
+                  spreadRadius: widget.haloSpreadRadius,
                 ),
               ]
             : null;
 
     final decoration = BoxDecoration(
-      color: backgroundGradient == null ? defaultBackground : null,
-      gradient: backgroundGradient,
+      color: widget.backgroundGradient == null ? defaultBackground : null,
+      gradient: widget.backgroundGradient,
       borderRadius: BorderRadius.circular(12),
       boxShadow: boxShadow,
     );
 
-    return DecoratedBox(
+    Widget result = DecoratedBox(
       decoration: decoration,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
         ),
-        child: child,
+        child: widget.child,
       ),
     );
+
+    if (widget.onTap != null || widget.enableTapScaleAnimation) {
+      result = GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _handleTap,
+        child: result,
+      );
+    }
+
+    if (widget.enableTapScaleAnimation) {
+      _ensureController();
+
+      result = ScaleTransition(
+        scale: _scaleAnimation!,
+        child: result,
+      );
+    }
+
+    return result;
   }
 }
 

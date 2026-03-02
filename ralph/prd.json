@@ -98,7 +98,7 @@
       "The bubble returns to its original size after the animation completes",
       "The animation feels elastic or spring-like rather than linear"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
