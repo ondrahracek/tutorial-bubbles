@@ -1439,6 +1439,57 @@ void main() {
     expect(controller.isFinished, isTrue);
   });
 
+  test(
+      'TutorialEngineController goBack moves to previous step and does nothing on first step or when finished',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+    final key3 = GlobalKey();
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+      TutorialStep(
+        targetKey: key3,
+        bubbleBuilder: (context) => const Text('Step 3'),
+      ),
+    ];
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.currentIndex, 0);
+    final goBackFromFirst = controller.goBack();
+    expect(goBackFromFirst, isFalse);
+    expect(controller.currentIndex, 0);
+
+    controller.advance();
+    expect(controller.currentIndex, 1);
+    expect(controller.currentStep.targetKey, key2);
+    final goBackFromSecond = controller.goBack();
+    expect(goBackFromSecond, isTrue);
+    expect(controller.currentIndex, 0);
+    expect(controller.currentStep.targetKey, key1);
+
+    controller.advance();
+    controller.advance();
+    expect(controller.currentIndex, 2);
+    controller.goBack();
+    expect(controller.currentIndex, 1);
+    controller.goBack();
+    expect(controller.currentIndex, 0);
+
+    controller.advance();
+    controller.finish();
+    expect(controller.isFinished, isTrue);
+    final goBackWhenFinished = controller.goBack();
+    expect(goBackWhenFinished, isFalse);
+    expect(controller.currentIndex, 1);
+  });
+
   testWidgets(
       'TutorialEngine onComplete is called with completed when last step is advanced through',
       (tester) async {
@@ -1672,6 +1723,67 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.currentIndex, 1);
+  });
+
+  testWidgets(
+      'TutorialEngine shows previous step when controller goBack is called',
+      (tester) async {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Back step 1',
+          ),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Back step 2',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          child: Column(
+            children: [
+              ElevatedButton(
+                key: key1,
+                onPressed: () {},
+                child: const Text('First'),
+              ),
+              ElevatedButton(
+                key: key2,
+                onPressed: () {},
+                child: const Text('Second'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    controller.start();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Back step 1'), findsOneWidget);
+    controller.advance();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 1);
+
+    controller.goBack();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 0);
+    expect(find.text('Back step 1'), findsOneWidget);
   });
 
   testWidgets(

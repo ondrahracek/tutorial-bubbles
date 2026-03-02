@@ -34,3 +34,5 @@
 2026-03-02: Implemented SharedPreferences-backed TutorialProgressStorage and a TutorialEngine persistenceId that saves the current step index on changes, clears it when the tutorial finishes, and restores it for new controllers after app restarts; added widget tests for resume and reset semantics and marked the PRD storage item for cross-restart progress persistence as passing after flutter analyze/test in root and analyze in example.
 
 2026-03-02: Added TutorialCompletionReason enum and TutorialEngine.onComplete callback; controller exposes lastCompletionReason (completed/skipped/finished); widget tests verify onComplete is called with correct reason for advance-through-last, skip-on-last, and finish(); PRD "Controller allows registering a callback when the tutorial completes" set to passes; flutter analyze/test and example analyze all passing.
+
+2026-03-02: Added TutorialEngineController.goBack() to navigate to the previous step (no-op on first step or when finished); unit and widget tests; PRD "Controller can navigate to the previous step" set to passes; flutter analyze/test and example analyze all passing.

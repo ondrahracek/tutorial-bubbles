@@ -361,6 +361,6 @@
       "Going back from step 2 shows step 1 again with its target and bubble",
       "Going back from the first step either does nothing or is undefined and documented"
     ],
-    "passes": false
+    "passes": true
   }
 ]

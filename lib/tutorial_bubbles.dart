@@ -1305,6 +1305,29 @@ class TutorialEngineController {
     return false;
   }
 
+  /// Goes back to the previous step when possible.
+  ///
+  /// Returns true when the active step index changes (i.e. the controller
+  /// was not on the first step). When already on the first step (index 0),
+  /// this does nothing and returns false. When the tutorial has already
+  /// finished, this also does nothing and returns false.
+  ///
+  /// Going back from step 2 shows step 1 again with its target and bubble.
+  /// Listeners of [currentIndexListenable] are notified when the step
+  /// changes. If persistence is configured, the saved position is updated
+  /// to the new step index.
+  bool goBack() {
+    if (_isFinished) {
+      return false;
+    }
+    if (_currentIndex == 0) {
+      return false;
+    }
+    _currentIndex -= 1;
+    _currentIndexNotifier.value = _currentIndex;
+    return true;
+  }
+
   /// Marks the tutorial as finished from any step.
   ///
   /// After calling [finish], the controller enters a finished state and
