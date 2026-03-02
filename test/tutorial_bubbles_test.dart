@@ -1232,6 +1232,133 @@ void main() {
     expect(targetTapped, isTrue);
     expect(outsideTapped, isFalse);
   });
+
+  testWidgets(
+      'TutorialEngine can advance when the bubble is tapped when configured',
+      (tester) async {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Step 1',
+          ),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Step 2',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          advanceOnBubbleTap: true,
+          child: Column(
+            children: [
+              ElevatedButton(
+                key: key1,
+                onPressed: () {},
+                child: const Text('First'),
+              ),
+              ElevatedButton(
+                key: key2,
+                onPressed: () {},
+                child: const Text('Second'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    expect(controller.currentIndex, 0);
+    expect(find.text('Step 1'), findsOneWidget);
+
+    await tester.tap(find.text('Step 1'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(controller.currentIndex, 1);
+  });
+
+  testWidgets(
+      'TutorialEngine can advance when tapping the dark overlay background when configured',
+      (tester) async {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Overlay step 1',
+          ),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Overlay step 2',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TutorialEngine(
+            controller: controller,
+            advanceOnOverlayTap: true,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    key: key1,
+                    onPressed: () {},
+                    child: const Text('First target'),
+                  ),
+                  ElevatedButton(
+                    key: key2,
+                    onPressed: () {},
+                    child: const Text('Second target'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    expect(controller.currentIndex, 0);
+    expect(find.text('Overlay step 1'), findsOneWidget);
+
+    // Tap a point near the top-left corner, away from the highlighted target,
+    // to simulate tapping the dark overlay background.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(controller.currentIndex, 1);
+  });
 }
 
 class _TargetOverlayDemo extends StatefulWidget {

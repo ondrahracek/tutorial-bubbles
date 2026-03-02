@@ -311,6 +311,7 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.bubbleHaloSpreadRadius = 2,
     this.blockOutsideTarget = true,
     this.onTargetTap,
+    this.onBackgroundTap,
     this.arrowEnabled = true,
     this.arrowColor = const Color(0xFFFFFFFF),
     this.arrowStrokeWidth = 2,
@@ -388,6 +389,15 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// When provided, taps within the [targetRect] area are routed to this
   /// callback even though interactions outside the target remain blocked.
   final VoidCallback? onTargetTap;
+
+  /// Optional callback invoked when the darkened background area outside the
+  /// highlighted [targetRect] is tapped while this overlay is active.
+  ///
+  /// When provided together with [blockOutsideTarget], taps that land outside
+  /// the target region are intercepted so they do not reach the underlying
+  /// content, and this callback is invoked to allow behaviors such as
+  /// advancing a tutorial step by tapping the overlay.
+  final VoidCallback? onBackgroundTap;
 
   /// Whether to render an arrow connecting the bubble toward the target.
   ///
@@ -473,6 +483,7 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
           targetRect: widget.targetRect,
           enabled: widget.blockOutsideTarget,
           onTargetTap: widget.onTargetTap,
+          onOutsideTap: widget.onBackgroundTap,
         ),
         CustomSingleChildLayout(
           delegate: _TutorialBubblePositionDelegate(
@@ -884,11 +895,15 @@ class _TutorialInteractionBlocker extends StatelessWidget {
     required this.targetRect,
     required this.enabled,
     this.onTargetTap,
+    this.onOutsideTap,
   });
 
   final Rect targetRect;
   final bool enabled;
   final VoidCallback? onTargetTap;
+   /// Optional callback for taps that land outside the highlighted target
+  /// region while interaction blocking is enabled.
+  final VoidCallback? onOutsideTap;
 
   @override
   Widget build(BuildContext context) {
@@ -911,7 +926,7 @@ class _TutorialInteractionBlocker extends StatelessWidget {
         final Rect clamped = Rect.fromLTRB(left, top, right, bottom);
 
         if (clamped.isEmpty) {
-          return const _AbsorbingRegion();
+          return _AbsorbingRegion(onTap: onOutsideTap);
         }
 
         return Stack(
@@ -921,28 +936,28 @@ class _TutorialInteractionBlocker extends StatelessWidget {
               top: 0,
               right: 0,
               height: clamped.top,
-              child: const _AbsorbingRegion(),
+              child: _AbsorbingRegion(onTap: onOutsideTap),
             ),
             Positioned(
               left: 0,
               top: clamped.bottom,
               right: 0,
               bottom: 0,
-              child: const _AbsorbingRegion(),
+              child: _AbsorbingRegion(onTap: onOutsideTap),
             ),
             Positioned(
               left: 0,
               top: clamped.top,
               width: clamped.left,
               height: clamped.height,
-              child: const _AbsorbingRegion(),
+              child: _AbsorbingRegion(onTap: onOutsideTap),
             ),
             Positioned(
               left: clamped.right,
               top: clamped.top,
               right: 0,
               height: clamped.height,
-              child: const _AbsorbingRegion(),
+              child: _AbsorbingRegion(onTap: onOutsideTap),
             ),
             if (onTargetTap != null)
               Positioned(
@@ -964,12 +979,26 @@ class _TutorialInteractionBlocker extends StatelessWidget {
 }
 
 class _AbsorbingRegion extends StatelessWidget {
-  const _AbsorbingRegion();
+  const _AbsorbingRegion({this.onTap});
+
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return const AbsorbPointer(
-      child: SizedBox.expand(
+    if (onTap == null) {
+      return const AbsorbPointer(
+        child: SizedBox.expand(
+          child: ColoredBox(
+            color: Color(0x00000000),
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: const SizedBox.expand(
         child: ColoredBox(
           color: Color(0x00000000),
         ),
@@ -1149,6 +1178,8 @@ class TutorialEngine extends StatefulWidget {
     super.key,
     required this.controller,
     required this.child,
+    this.advanceOnBubbleTap = false,
+    this.advanceOnOverlayTap = false,
   });
 
   /// Controller that owns the ordered list of tutorial steps.
@@ -1156,6 +1187,22 @@ class TutorialEngine extends StatefulWidget {
 
   /// The underlying application content that the tutorial overlays.
   final Widget child;
+
+  /// Whether tapping the bubble content should attempt to advance the
+  /// tutorial to the next step.
+  ///
+  /// When true, the bubble built for each step is wrapped in a tap handler
+  /// that calls [TutorialEngineController.advance]. Reaching the end of the
+  /// steps via this mechanism finishes the tutorial and hides the overlay.
+  final bool advanceOnBubbleTap;
+
+  /// Whether tapping the dark background overlay outside the target should
+  /// attempt to advance the tutorial to the next step.
+  ///
+  /// When true, taps that land in the dimmed area surrounding the highlighted
+  /// target are intercepted so they do not reach the underlying content and
+  /// are instead routed to [TutorialEngineController.advance].
+  final bool advanceOnOverlayTap;
 
   @override
   State<TutorialEngine> createState() => _TutorialEngineState();
@@ -1213,6 +1260,12 @@ class _TutorialEngineState extends State<TutorialEngine> {
     });
   }
 
+  void _handleAdvanceRequested() {
+    if (!_controller.isFinished) {
+      _controller.advance();
+    }
+  }
+
   void _updateTargetRect() {
     if (_controller.isFinished) {
       if (_currentTargetRect != null) {
@@ -1267,9 +1320,19 @@ class _TutorialEngineState extends State<TutorialEngine> {
                 child: TutorialBubbleOverlay(
                   targetRect: _currentTargetRect!,
                   preferredSide: TutorialBubbleSide.automatic,
+                  onBackgroundTap:
+                      widget.advanceOnOverlayTap ? _handleAdvanceRequested : null,
                   child: Builder(
                     builder: (context) {
-                      return _controller.currentStep.bubbleBuilder(context);
+                      final bubble = _controller.currentStep.bubbleBuilder(context);
+                      if (!widget.advanceOnBubbleTap) {
+                        return bubble;
+                      }
+                      return GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: _handleAdvanceRequested,
+                        child: bubble,
+                      );
                     },
                   ),
                 ),

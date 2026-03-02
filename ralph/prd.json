@@ -220,7 +220,7 @@
       "When this option is enabled, tapping the bubble also moves to the next step",
       "When this option is disabled, only the target interaction advances the tutorial"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
