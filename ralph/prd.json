@@ -310,7 +310,7 @@
       "Resetting the saved state causes the tutorial to restart from the first step",
       "Persistence requires no additional configuration from the package consumer"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "storage",

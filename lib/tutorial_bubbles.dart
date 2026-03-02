@@ -1,6 +1,9 @@
 library tutorial_bubbles;
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Preferred side for positioning a bubble relative to its target.
 enum TutorialBubbleSide {
@@ -1091,6 +1094,40 @@ class TutorialVisuals {
   }
 }
 
+/// Simple key-value storage for persisting tutorial progress across app restarts.
+///
+/// This implementation uses [SharedPreferences] under the hood so callers do not
+/// need to provide their own persistence layer. Progress is stored as the
+/// zero-based index of the last active step for a given tutorial identifier.
+class TutorialProgressStorage {
+  TutorialProgressStorage._();
+
+  static const String _keyPrefix = 'tutorial_bubbles_progress_';
+
+  static String _storageKey(String tutorialId) =>
+      '$_keyPrefix$tutorialId';
+
+  /// Reads the persisted zero-based step index for the given [tutorialId].
+  ///
+  /// Returns null when no progress has been saved yet.
+  static Future<int?> readIndex(String tutorialId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_storageKey(tutorialId));
+  }
+
+  /// Persists the given zero-based [stepIndex] for the provided [tutorialId].
+  static Future<void> writeIndex(String tutorialId, int stepIndex) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_storageKey(tutorialId), stepIndex);
+  }
+
+  /// Clears any saved progress for the provided [tutorialId].
+  static Future<void> clear(String tutorialId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey(tutorialId));
+  }
+}
+
 /// Immutable description of a single tutorial step.
 ///
 /// Each step identifies a target widget by [targetKey] and provides
@@ -1257,6 +1294,22 @@ class TutorialEngineController {
     _isFinished = true;
     _isFinishedNotifier.value = true;
   }
+
+  /// Jumps to the given zero-based [index] within the list of steps.
+  ///
+  /// Indices outside the valid range are ignored. When the resolved index
+  /// differs from the current one, listeners of [currentIndexListenable] are
+  /// notified.
+  void jumpTo(int index) {
+    if (index < 0 || index >= _steps.length) {
+      return;
+    }
+    if (_currentIndex == index) {
+      return;
+    }
+    _currentIndex = index;
+    _currentIndexNotifier.value = _currentIndex;
+  }
 }
 
 /// Widget that renders a tutorial overlay for the current [TutorialStep].
@@ -1282,6 +1335,7 @@ class TutorialEngine extends StatefulWidget {
     this.advanceOnBubbleTap = false,
     this.advanceOnOverlayTap = false,
     this.globalVisuals,
+    this.persistenceId,
   });
 
   /// Controller that owns the ordered list of tutorial steps.
@@ -1312,6 +1366,15 @@ class TutorialEngine extends StatefulWidget {
   /// per-step basis.
   final TutorialVisuals? globalVisuals;
 
+  /// Optional identifier used to persist and restore tutorial progress.
+  ///
+  /// When provided, the engine saves the zero-based index of the current step
+  /// using [TutorialProgressStorage] whenever the active step changes, and
+  /// clears the saved value when the tutorial finishes. On a subsequent app
+  /// run, creating a new [TutorialEngine] with the same [persistenceId] will
+  /// resume from the saved step index without requiring any extra setup.
+  final String? persistenceId;
+
   @override
   State<TutorialEngine> createState() => _TutorialEngineState();
 }
@@ -1320,6 +1383,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
   final GlobalKey _overlayKey = GlobalKey();
   Rect? _currentTargetRect;
   bool _pendingTargetRectUpdate = false;
+  bool _hasLoadedPersistedProgress = false;
 
   TutorialEngineController get _controller => widget.controller;
 
@@ -1340,6 +1404,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
     _controller.currentIndexListenable.addListener(_handleStepChanged);
     _controller.isFinishedListenable.addListener(_handleFinishedChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateTargetRect());
+    _maybeLoadPersistedProgress();
   }
 
   @override
@@ -1354,6 +1419,11 @@ class _TutorialEngineState extends State<TutorialEngine> {
       _controller.isFinishedListenable.addListener(_handleFinishedChanged);
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _updateTargetRect());
+    }
+
+    if (oldWidget.persistenceId != widget.persistenceId) {
+      _hasLoadedPersistedProgress = false;
+      _maybeLoadPersistedProgress();
     }
   }
 
@@ -1371,13 +1441,55 @@ class _TutorialEngineState extends State<TutorialEngine> {
         _updateTargetRect();
       }
     });
+    _persistProgressIfNeeded();
   }
 
   void _handleFinishedChanged() {
     if (!mounted) return;
+    _clearPersistedProgressIfNeeded();
     setState(() {
       _currentTargetRect = null;
     });
+  }
+
+  void _maybeLoadPersistedProgress() {
+    final String? id = widget.persistenceId;
+    if (id == null || _hasLoadedPersistedProgress) {
+      return;
+    }
+    _hasLoadedPersistedProgress = true;
+
+    unawaited(() async {
+      final savedIndex = await TutorialProgressStorage.readIndex(id);
+      if (!mounted || savedIndex == null) {
+        return;
+      }
+      var clamped = savedIndex;
+      if (clamped < 0) {
+        clamped = 0;
+      } else if (clamped >= _controller.totalSteps) {
+        clamped = _controller.totalSteps - 1;
+      }
+      if (clamped != _controller.currentIndex) {
+        _controller.jumpTo(clamped);
+      }
+    }());
+  }
+
+  void _persistProgressIfNeeded() {
+    final String? id = widget.persistenceId;
+    if (id == null || _controller.isFinished) {
+      return;
+    }
+    unawaited(TutorialProgressStorage.writeIndex(id, _controller.currentIndex));
+  }
+
+  void _clearPersistedProgressIfNeeded() {
+    final String? id = widget.persistenceId;
+    if (id == null) {
+      return;
+    }
+    unawaited(TutorialProgressStorage.clear(id));
   }
 
   void _handleAdvanceRequested() {
