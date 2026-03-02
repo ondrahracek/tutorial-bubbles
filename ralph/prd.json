@@ -200,7 +200,7 @@
       "A button's action callback fires as expected when tapped during the tutorial",
       "The target behaves identically to how it would with no overlay present"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

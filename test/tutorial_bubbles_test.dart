@@ -71,7 +71,7 @@ void main() {
     // Initial scale should be at the resting value.
     expect(animation.value, closeTo(1.0, 0.001));
 
-    await tester.tap(find.byType(TutorialBubble));
+    await tester.tap(find.byType(TutorialBubble), warnIfMissed: false);
     await tester.pumpAndSettle();
 
     // After the animation completes, the scale returns to the resting value.
@@ -874,14 +874,37 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Outside button'));
+    await tester.tap(find.text('Outside button'), warnIfMissed: false);
     await tester.pumpAndSettle();
     expect(outsideTapped, isFalse);
 
-    // The target can still be interacted with in future scenarios,
-    // but this test focuses specifically on ensuring that taps
-    // outside the highlighted target are blocked.
     expect(targetTapped, isFalse);
+  });
+
+  testWidgets(
+      'Target remains interactive when TutorialBubbleOverlay is active',
+      (tester) async {
+    var targetTapped = false;
+    var outsideTapped = false;
+
+    await tester.pumpWidget(
+      _InteractionBlockingDemo(
+        onTargetTap: () {
+          targetTapped = true;
+        },
+        onOutsideTap: () {
+          outsideTapped = true;
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Target button'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(targetTapped, isTrue);
+    expect(outsideTapped, isFalse);
   });
 }
 
@@ -1042,6 +1065,7 @@ class _InteractionBlockingDemoState extends State<_InteractionBlockingDemo> {
                     child: TutorialBubbleOverlay(
                       targetRect: _targetRect!,
                       preferredSide: TutorialBubbleSide.top,
+                      onTargetTap: widget.onTargetTap,
                       child: const SizedBox(width: 40, height: 40),
                     ),
                   ),

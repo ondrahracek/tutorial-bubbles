@@ -306,6 +306,7 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.bubbleHaloBlurRadius = 16,
     this.bubbleHaloSpreadRadius = 2,
     this.blockOutsideTarget = true,
+    this.onTargetTap,
     this.arrowEnabled = true,
     this.arrowColor = const Color(0xFFFFFFFF),
     this.arrowStrokeWidth = 2,
@@ -358,6 +359,13 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// When true (the default), taps and gestures anywhere outside the target
   /// will be absorbed so that only the highlighted target remains interactive.
   final bool blockOutsideTarget;
+
+  /// Optional callback invoked when the highlighted target region is tapped
+  /// while this overlay is active.
+  ///
+  /// When provided, taps within the [targetRect] area are routed to this
+  /// callback even though interactions outside the target remain blocked.
+  final VoidCallback? onTargetTap;
 
   /// Whether to render an arrow connecting the bubble toward the target.
   ///
@@ -416,39 +424,44 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
         ? (_resolvedSide ?? TutorialBubbleSide.bottom)
         : widget.preferredSide;
 
-    return CustomPaint(
-      painter: _TutorialOverlayPainter(
-        targetRect: widget.targetRect,
-        overlayColor: widget.overlayColor,
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _TutorialInteractionBlocker(
-            targetRect: widget.targetRect,
-            enabled: widget.blockOutsideTarget,
-          ),
-          CustomSingleChildLayout(
-            delegate: _TutorialBubblePositionDelegate(
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        IgnorePointer(
+          child: CustomPaint(
+            painter: _TutorialOverlayPainter(
               targetRect: widget.targetRect,
-              preferredSide: widget.preferredSide,
-              padding: widget.padding,
-              onResolvedSide: widget.preferredSide == TutorialBubbleSide.automatic
-                  ? _onLayoutResolved
-                  : null,
-            ),
-            child: TutorialBubble(
-              backgroundColor: widget.backgroundColor,
-              backgroundGradient: widget.backgroundGradient,
-              haloEnabled: widget.bubbleHaloEnabled,
-              haloColor: widget.bubbleHaloColor,
-              haloBlurRadius: widget.bubbleHaloBlurRadius,
-              haloSpreadRadius: widget.bubbleHaloSpreadRadius,
-              child: widget.child,
+              overlayColor: widget.overlayColor,
             ),
           ),
-          if (widget.arrowEnabled)
-            CustomPaint(
+        ),
+        _TutorialInteractionBlocker(
+          targetRect: widget.targetRect,
+          enabled: widget.blockOutsideTarget,
+          onTargetTap: widget.onTargetTap,
+        ),
+        CustomSingleChildLayout(
+          delegate: _TutorialBubblePositionDelegate(
+            targetRect: widget.targetRect,
+            preferredSide: widget.preferredSide,
+            padding: widget.padding,
+            onResolvedSide: widget.preferredSide == TutorialBubbleSide.automatic
+                ? _onLayoutResolved
+                : null,
+          ),
+          child: TutorialBubble(
+            backgroundColor: widget.backgroundColor,
+            backgroundGradient: widget.backgroundGradient,
+            haloEnabled: widget.bubbleHaloEnabled,
+            haloColor: widget.bubbleHaloColor,
+            haloBlurRadius: widget.bubbleHaloBlurRadius,
+            haloSpreadRadius: widget.bubbleHaloSpreadRadius,
+            child: widget.child,
+          ),
+        ),
+        if (widget.arrowEnabled)
+          IgnorePointer(
+            child: CustomPaint(
               painter: TutorialArrowPainter(
                 targetRect: widget.targetRect,
                 side: effectiveArrowSide,
@@ -461,8 +474,8 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
                     widget.arrowHaloStrokeWidthMultiplier,
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -783,10 +796,12 @@ class _TutorialInteractionBlocker extends StatelessWidget {
   const _TutorialInteractionBlocker({
     required this.targetRect,
     required this.enabled,
+    this.onTargetTap,
   });
 
   final Rect targetRect;
   final bool enabled;
+  final VoidCallback? onTargetTap;
 
   @override
   Widget build(BuildContext context) {
@@ -842,6 +857,18 @@ class _TutorialInteractionBlocker extends StatelessWidget {
               height: clamped.height,
               child: const _AbsorbingRegion(),
             ),
+            if (onTargetTap != null)
+              Positioned(
+                left: clamped.left,
+                top: clamped.top,
+                width: clamped.width,
+                height: clamped.height,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTargetTap,
+                  child: const SizedBox.expand(),
+                ),
+              ),
           ],
         );
       },
