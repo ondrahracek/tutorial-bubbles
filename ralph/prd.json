@@ -27,7 +27,7 @@
       "Example shows at least one bubble pointing at a target widget",
       "Example source code is minimal and readable as usage documentation"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
