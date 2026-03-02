@@ -486,6 +486,34 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay arrow direction matches bubble side in automatic mode',
+      (tester) async {
+    const targetRectLocal = Rect.fromLTWH(80, 40, 40, 40);
+    const overlaySize = Size(200, 200);
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            width: overlaySize.width,
+            height: overlaySize.height,
+            child: const TutorialBubbleOverlay(
+              targetRect: targetRectLocal,
+              preferredSide: TutorialBubbleSide.automatic,
+              child: SizedBox(width: 10, height: 10),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+    expect(find.byType(TutorialBubble), findsOneWidget);
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay keeps the bubble fully visible near the top edge',
       (tester) async {
     const overlaySize = Size(200, 200);

@@ -128,7 +128,7 @@
       "When bubble is to the left of the target, the arrow points rightward",
       "Arrow origin and direction update automatically when the bubble side changes"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

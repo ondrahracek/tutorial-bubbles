@@ -291,7 +291,7 @@ class TutorialTextBubble extends StatelessWidget {
 ///
 /// The bubble is laid out using a [CustomSingleChildLayout] so it can
 /// choose its final position after its size is known.
-class TutorialBubbleOverlay extends StatelessWidget {
+class TutorialBubbleOverlay extends StatefulWidget {
   const TutorialBubbleOverlay({
     super.key,
     required this.targetRect,
@@ -364,38 +364,61 @@ class TutorialBubbleOverlay extends StatelessWidget {
   final Widget child;
 
   @override
+  State<TutorialBubbleOverlay> createState() => _TutorialBubbleOverlayState();
+}
+
+class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
+  /// Resolved side when [TutorialBubbleOverlay.preferredSide] is automatic;
+  /// updated after layout so the arrow direction matches the bubble's side.
+  TutorialBubbleSide? _resolvedSide;
+
+  void _onLayoutResolved(TutorialBubbleSide side) {
+    if (!mounted) return;
+    if (_resolvedSide != side) {
+      setState(() => _resolvedSide = side);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final effectiveArrowSide = widget.preferredSide == TutorialBubbleSide.automatic
+        ? (_resolvedSide ?? TutorialBubbleSide.bottom)
+        : widget.preferredSide;
+
     return CustomPaint(
       painter: _TutorialOverlayPainter(
-        targetRect: targetRect,
-        overlayColor: overlayColor,
+        targetRect: widget.targetRect,
+        overlayColor: widget.overlayColor,
       ),
       child: Stack(
         fit: StackFit.expand,
         children: [
           CustomSingleChildLayout(
             delegate: _TutorialBubblePositionDelegate(
-              targetRect: targetRect,
-              preferredSide: preferredSide,
-              padding: padding,
+              targetRect: widget.targetRect,
+              preferredSide: widget.preferredSide,
+              padding: widget.padding,
+              onResolvedSide: widget.preferredSide == TutorialBubbleSide.automatic
+                  ? _onLayoutResolved
+                  : null,
             ),
             child: TutorialBubble(
-              backgroundColor: backgroundColor,
-              backgroundGradient: backgroundGradient,
-              haloEnabled: bubbleHaloEnabled,
-              haloColor: bubbleHaloColor,
-              haloBlurRadius: bubbleHaloBlurRadius,
-              haloSpreadRadius: bubbleHaloSpreadRadius,
-              child: child,
+              backgroundColor: widget.backgroundColor,
+              backgroundGradient: widget.backgroundGradient,
+              haloEnabled: widget.bubbleHaloEnabled,
+              haloColor: widget.bubbleHaloColor,
+              haloBlurRadius: widget.bubbleHaloBlurRadius,
+              haloSpreadRadius: widget.bubbleHaloSpreadRadius,
+              child: widget.child,
             ),
           ),
-          if (arrowEnabled)
+          if (widget.arrowEnabled)
             CustomPaint(
               painter: _TutorialArrowPainter(
-                targetRect: targetRect,
-                side: preferredSide,
-                color: arrowColor,
-                strokeWidth: arrowStrokeWidth,
+                targetRect: widget.targetRect,
+                side: effectiveArrowSide,
+                color: widget.arrowColor,
+                strokeWidth: widget.arrowStrokeWidth,
               ),
             ),
         ],
@@ -409,11 +432,15 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
     required this.targetRect,
     required this.preferredSide,
     required this.padding,
+    this.onResolvedSide,
   });
 
   final Rect targetRect;
   final TutorialBubbleSide preferredSide;
   final EdgeInsets padding;
+
+  /// Called with the resolved side after layout when [preferredSide] is automatic.
+  final void Function(TutorialBubbleSide)? onResolvedSide;
 
   TutorialBubbleSide _resolveSide(Size overlaySize, Size childSize) {
     if (preferredSide != TutorialBubbleSide.automatic) {
@@ -440,6 +467,11 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     final side = _resolveSide(size, childSize);
+    if (onResolvedSide != null && preferredSide == TutorialBubbleSide.automatic) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        onResolvedSide!(side);
+      });
+    }
 
     double x;
     double y;
@@ -488,7 +520,8 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
   bool shouldRelayout(_TutorialBubblePositionDelegate oldDelegate) {
     return oldDelegate.targetRect != targetRect ||
         oldDelegate.preferredSide != preferredSide ||
-        oldDelegate.padding != padding;
+        oldDelegate.padding != padding ||
+        oldDelegate.onResolvedSide != onResolvedSide;
   }
 }
 
