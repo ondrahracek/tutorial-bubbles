@@ -240,7 +240,7 @@
       "Each step specifies which widget to target and what text or content to show in the bubble",
       "The step structure is sufficient for the engine to render the bubble and overlay correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "tutorial-engine",

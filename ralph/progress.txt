@@ -8,3 +8,4 @@
 2026-03-02: Verified any Flutter widget (ElevatedButton, Text, and a custom widget) can be targeted without changing its implementation by measuring its layout rect and driving TutorialBubbleOverlay; flutter analyze/test in root and analyze in example all passing.
 2026-03-02: Introduced TutorialTextBubble for configurable text content and styles (including full TextStyle override), added widget tests, and updated the example to use it; flutter analyze/test in root and analyze in example all passing.
 2026-03-02: Added a configurable dark overlay that dims the background while keeping the target and bubble bright using a custom painter in TutorialBubbleOverlay, plus a widget test; flutter analyze/test in root and analyze in example all passing.
+2026-03-02: Added TutorialStep and TutorialEngineController to accept an ordered list of steps with target keys and bubble builders, plus tests and PRD update; flutter analyze/test and example analyze to be confirmed.

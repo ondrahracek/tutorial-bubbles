@@ -429,6 +429,37 @@ void main() {
 
     expect(find.byType(TutorialBubble), findsOneWidget);
   });
+
+  test(
+      'TutorialEngineController accepts a non-empty ordered list of TutorialStep instances',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+    ];
+
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.steps, hasLength(2));
+    expect(controller.steps[0].targetKey, key1);
+    expect(controller.steps[1].targetKey, key2);
+  });
+
+  test('TutorialEngineController rejects an empty list of steps', () {
+    expect(
+      () => TutorialEngineController(steps: const []),
+      throwsA(isA<AssertionError>()),
+    );
+  });
 }
 
 class _TargetOverlayDemo extends StatefulWidget {

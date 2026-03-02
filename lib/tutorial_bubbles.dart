@@ -320,3 +320,41 @@ class _TutorialOverlayPainter extends CustomPainter {
         oldDelegate.overlayColor != overlayColor;
   }
 }
+
+/// Immutable description of a single tutorial step.
+///
+/// Each step identifies a target widget by [targetKey] and provides
+/// [bubbleBuilder] to build the bubble content for that step.
+class TutorialStep {
+  const TutorialStep({
+    required this.targetKey,
+    required this.bubbleBuilder,
+  });
+
+  /// Key of the widget that should be highlighted for this step.
+  ///
+  /// The engine uses this key to locate the widget and compute its
+  /// layout rectangle for the bubble and overlay.
+  final GlobalKey targetKey;
+
+  /// Builder used to create the bubble contents for this step.
+  final WidgetBuilder bubbleBuilder;
+}
+
+/// A simple controller that owns a list of [TutorialStep]s.
+///
+/// This class focuses on accepting and exposing the ordered list of
+/// steps. Behavioral concerns such as when the tutorial starts or how
+/// it advances are modeled by higher-level APIs built on top of this.
+class TutorialEngineController {
+  TutorialEngineController({
+    required List<TutorialStep> steps,
+  })  : assert(steps.isNotEmpty, 'TutorialEngineController requires at least one step.'),
+        _steps = List.unmodifiable(steps);
+
+  final List<TutorialStep> _steps;
+
+  /// Ordered, immutable list of steps managed by this controller.
+  List<TutorialStep> get steps => _steps;
+}
+
