@@ -1,0 +1,2 @@
+2026-03-02: Scaffolded Flutter package with lib/, test/, and example/, passing flutter analyze and flutter test in root and analyze in example/.
+

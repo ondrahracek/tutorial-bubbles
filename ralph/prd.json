@@ -7,7 +7,7 @@
       "flutter analyze reports no issues",
       "Package has lib/, test/, and example/ directories"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "package",
