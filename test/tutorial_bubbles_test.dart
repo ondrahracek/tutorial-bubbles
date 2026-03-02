@@ -975,6 +975,54 @@ void main() {
   });
 
   testWidgets(
+      'Distance between bubble and target is configurable via TutorialBubbleOverlay.padding',
+      (tester) async {
+    const overlaySize = Size(200, 200);
+    const overlayKey = ValueKey('overlayGap');
+    // Place the target high enough in the overlay so that increasing the
+    // padding does not cause the bubble to clamp against the bottom edge,
+    // which would hide changes in the configured gap.
+    const targetRectLocal = Rect.fromLTWH(80, 40, 40, 40);
+
+    Future<double> pumpAndMeasureGap(EdgeInsets padding) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: SizedBox(
+              key: overlayKey,
+              width: overlaySize.width,
+              height: overlaySize.height,
+              child: TutorialBubbleOverlay(
+                targetRect: targetRectLocal,
+                preferredSide: TutorialBubbleSide.bottom,
+                padding: padding,
+                child: const SizedBox(width: 40, height: 40),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final overlayRect = tester.getRect(find.byKey(overlayKey));
+      final bubbleRectGlobal = tester.getRect(find.byType(TutorialBubble));
+      final bubbleRectLocal = bubbleRectGlobal.shift(-overlayRect.topLeft);
+
+      return bubbleRectLocal.top - targetRectLocal.bottom;
+    }
+
+    final defaultGap = await pumpAndMeasureGap(
+      const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+    );
+    final largerGap = await pumpAndMeasureGap(
+      const EdgeInsets.only(top: 48),
+    );
+
+    expect(defaultGap, greaterThan(0));
+    expect(largerGap, greaterThan(defaultGap));
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay and bubble can be used as a standalone spotlight without any tutorial engine',
       (tester) async {
     final GlobalKey targetKey = GlobalKey();

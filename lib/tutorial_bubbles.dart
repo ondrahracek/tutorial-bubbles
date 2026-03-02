@@ -372,7 +372,7 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.overlayColor = const Color(0xB3000000),
     this.backgroundColor,
     this.backgroundGradient,
-    this.padding = const EdgeInsets.all(8),
+    this.padding = const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
     this.targetHaloEnabled = false,
     this.targetHaloColor,
     this.targetHaloBlurRadius = 16,
@@ -423,7 +423,13 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// When provided, this takes precedence over [backgroundColor].
   final Gradient? backgroundGradient;
 
-  /// Padding between the bubble and the [targetRect].
+  /// Padding used when positioning the bubble relative to [targetRect].
+  ///
+  /// For targets above or below the bubble, the vertical insets (top/bottom)
+  /// control how far the bubble sits from the target; for targets to the left
+  /// or right, the horizontal insets (left/right) control that gap. The
+  /// default provides a comfortable amount of spacing between bubble and
+  /// target while still keeping them visually connected.
   final EdgeInsets padding;
 
   /// Whether to draw a glow/halo around the highlighted [targetRect].

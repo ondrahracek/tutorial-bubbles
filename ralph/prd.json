@@ -439,7 +439,7 @@
       "The default places the bubble farther from the target (more spacing)",
       "Callers can adjust the gap between bubble and target"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
