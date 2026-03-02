@@ -1440,6 +1440,129 @@ void main() {
   });
 
   testWidgets(
+      'TutorialEngine onComplete is called with completed when last step is advanced through',
+      (tester) async {
+    final key = GlobalKey();
+    TutorialCompletionReason? capturedReason;
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          onComplete: (reason) {
+            capturedReason = reason;
+          },
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    expect(capturedReason, isNull);
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(capturedReason, TutorialCompletionReason.completed);
+  });
+
+  testWidgets(
+      'TutorialEngine onComplete is called with skipped when last step is skipped',
+      (tester) async {
+    final key = GlobalKey();
+    TutorialCompletionReason? capturedReason;
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          onComplete: (reason) {
+            capturedReason = reason;
+          },
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    expect(capturedReason, isNull);
+
+    controller.skip();
+    await tester.pumpAndSettle();
+    expect(capturedReason, TutorialCompletionReason.skipped);
+  });
+
+  testWidgets(
+      'TutorialEngine onComplete is called with finished when finish() is called',
+      (tester) async {
+    final key = GlobalKey();
+    TutorialCompletionReason? capturedReason;
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          onComplete: (reason) {
+            capturedReason = reason;
+          },
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    expect(capturedReason, isNull);
+
+    controller.finish();
+    await tester.pumpAndSettle();
+    expect(capturedReason, TutorialCompletionReason.finished);
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay blocks interactions outside the highlighted target',
       (tester) async {
     var targetTapped = false;

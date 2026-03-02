@@ -16,6 +16,18 @@ enum TutorialBubbleSide {
   automatic,
 }
 
+/// Reason the tutorial ended, used by [TutorialEngine.onComplete].
+enum TutorialCompletionReason {
+  /// The user completed the final step (e.g. via [TutorialEngineController.advance]).
+  completed,
+
+  /// The current step was skipped and that was the last step (e.g. via [TutorialEngineController.skip]).
+  skipped,
+
+  /// The tutorial was ended programmatically (e.g. via [TutorialEngineController.finish]).
+  finished,
+}
+
 /// A simple bubble widget that wraps the given [child] with a
 /// configurable background.
 class TutorialBubble extends StatelessWidget {
@@ -1212,6 +1224,15 @@ class TutorialEngineController {
 
   bool _isFinished = false;
 
+  TutorialCompletionReason? _lastCompletionReason;
+
+  /// The reason the tutorial ended, if [isFinished] is true.
+  ///
+  /// Set when the tutorial transitions to finished via [advance] (completed),
+  /// [skip] (skipped), or [finish] (finished). Used by [TutorialEngine] to
+  /// invoke [TutorialEngine.onComplete] with the correct context.
+  TutorialCompletionReason? get lastCompletionReason => _lastCompletionReason;
+
   /// Whether the tutorial has finished executing all steps.
   bool get isFinished => _isFinished;
 
@@ -1252,6 +1273,7 @@ class TutorialEngineController {
     }
 
     if (!_isFinished) {
+      _lastCompletionReason = TutorialCompletionReason.completed;
       _isFinished = true;
       _isFinishedNotifier.value = true;
     }
@@ -1276,6 +1298,7 @@ class TutorialEngineController {
     }
 
     if (!_isFinished) {
+      _lastCompletionReason = TutorialCompletionReason.skipped;
       _isFinished = true;
       _isFinishedNotifier.value = true;
     }
@@ -1291,6 +1314,7 @@ class TutorialEngineController {
     if (_isFinished) {
       return;
     }
+    _lastCompletionReason = TutorialCompletionReason.finished;
     _isFinished = true;
     _isFinishedNotifier.value = true;
   }
@@ -1336,6 +1360,7 @@ class TutorialEngine extends StatefulWidget {
     this.advanceOnOverlayTap = false,
     this.globalVisuals,
     this.persistenceId,
+    this.onComplete,
   });
 
   /// Controller that owns the ordered list of tutorial steps.
@@ -1374,6 +1399,14 @@ class TutorialEngine extends StatefulWidget {
   /// run, creating a new [TutorialEngine] with the same [persistenceId] will
   /// resume from the saved step index without requiring any extra setup.
   final String? persistenceId;
+
+  /// Optional callback invoked when the tutorial ends.
+  ///
+  /// Called when the tutorial finishes because the last step was completed
+  /// ([TutorialCompletionReason.completed]), the last step was skipped
+  /// ([TutorialCompletionReason.skipped]), or the tutorial was ended
+  /// programmatically ([TutorialCompletionReason.finished]).
+  final void Function(TutorialCompletionReason reason)? onComplete;
 
   @override
   State<TutorialEngine> createState() => _TutorialEngineState();
@@ -1447,9 +1480,12 @@ class _TutorialEngineState extends State<TutorialEngine> {
   void _handleFinishedChanged() {
     if (!mounted) return;
     _clearPersistedProgressIfNeeded();
+    final onComplete = widget.onComplete;
+    final reason = _controller.lastCompletionReason ?? TutorialCompletionReason.completed;
     setState(() {
       _currentTargetRect = null;
     });
+    onComplete?.call(reason);
   }
 
   void _maybeLoadPersistedProgress() {
