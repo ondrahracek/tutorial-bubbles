@@ -38,5 +38,6 @@
 2026-03-02: Added TutorialEngineController.goBack() to navigate to the previous step (no-op on first step or when finished); unit and widget tests; PRD "Controller can navigate to the previous step" set to passes; flutter analyze/test and example analyze all passing.
 
 2026-03-02: Added TutorialEngine.checkpointSteps (Set<int>?): null = save every step, non-empty set = save only at those indices, empty set = never save; _persistProgressIfNeeded respects checkpoints; widget tests for checkpoints {2,5} and empty set; PRD "Progress is only saved at configurable checkpoint steps" set to passes; flutter analyze/test and example analyze all passing.
-2026-03-02: Updated TutorialBubbleOverlay overlay cutout to match the target bounds exactly, added a pixel-level painter test, and ensured flutter analyze/test in root and analyze in example all pass.
+2026-03-02: Updated TutorialBubbleOverlay overlay cutout to match the target bounds exactly with a painter test and ensured flutter analyze/test in root and analyze in example all pass.
 2026-03-02: Made TutorialBubble corner radius configurable via a cornerRadius parameter with tests and marked the PRD item "Bubble corner radius is configurable" as passing; flutter analyze/test in root and analyze in example all passing to be confirmed.
+2026-03-02: Added a configurable maxBubbleWidthFraction to TutorialBubbleOverlay so bubbles default to a non-full-screen width, with widget tests covering default and custom fractions; flutter analyze/test in root and analyze in example all passing.

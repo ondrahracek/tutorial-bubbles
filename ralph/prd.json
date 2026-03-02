@@ -449,6 +449,6 @@
       "The color or gradient is applied to the bubble's interior surface",
       "The color is not rendered only in a halo or area around the bubble"
     ],
-    "passes": false
+    "passes": true
   }
 ]

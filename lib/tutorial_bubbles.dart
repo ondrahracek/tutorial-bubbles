@@ -323,6 +323,7 @@ class TutorialBubbleOverlay extends StatefulWidget {
     required this.targetRect,
     required this.child,
     this.preferredSide = TutorialBubbleSide.automatic,
+    this.maxBubbleWidthFraction = 0.6,
     this.overlayColor = const Color(0xB3000000),
     this.backgroundColor,
     this.backgroundGradient,
@@ -353,6 +354,14 @@ class TutorialBubbleOverlay extends StatefulWidget {
 
   /// Which side of the [targetRect] the bubble prefers to appear on.
   final TutorialBubbleSide preferredSide;
+
+  /// Fraction of the available width that the bubble may occupy at most.
+  ///
+  /// This is applied as an upper bound when laying out the bubble so that
+  /// it does not stretch edge-to-edge across the screen by default. The
+  /// value is clamped between 0 and 1; a value around 0.5–0.7 typically
+  /// produces a comfortable reading width.
+  final double maxBubbleWidthFraction;
 
   /// Color of the dark overlay that dims everything except the bubble
   /// and target.
@@ -516,6 +525,7 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
             targetRect: widget.targetRect,
             preferredSide: widget.preferredSide,
             padding: widget.padding,
+            maxBubbleWidthFraction: widget.maxBubbleWidthFraction,
             onResolvedSide: widget.preferredSide == TutorialBubbleSide.automatic
                 ? _onLayoutResolved
                 : null,
@@ -556,12 +566,16 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
     required this.targetRect,
     required this.preferredSide,
     required this.padding,
+    required this.maxBubbleWidthFraction,
     this.onResolvedSide,
   });
 
   final Rect targetRect;
   final TutorialBubbleSide preferredSide;
   final EdgeInsets padding;
+
+  /// Maximum fraction of the overlay width that the bubble may occupy.
+  final double maxBubbleWidthFraction;
 
   /// Called with the resolved side after layout when [preferredSide] is automatic.
   final void Function(TutorialBubbleSide)? onResolvedSide;
@@ -637,7 +651,19 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
-    return BoxConstraints.loose(constraints.biggest);
+    final Size biggest = constraints.biggest;
+    final double clampedFraction =
+        maxBubbleWidthFraction.clamp(0.0, 1.0);
+    final double maxWidth = biggest.width.isFinite
+        ? biggest.width * clampedFraction
+        : double.infinity;
+
+    return BoxConstraints(
+      minWidth: 0,
+      maxWidth: maxWidth,
+      minHeight: 0,
+      maxHeight: biggest.height,
+    );
   }
 
   @override
@@ -645,6 +671,7 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
     return oldDelegate.targetRect != targetRect ||
         oldDelegate.preferredSide != preferredSide ||
         oldDelegate.padding != padding ||
+        oldDelegate.maxBubbleWidthFraction != maxBubbleWidthFraction ||
         oldDelegate.onResolvedSide != onResolvedSide;
   }
 }
