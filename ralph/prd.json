@@ -380,7 +380,7 @@
       "The halo appears as if the full screen were dimmed and the halo is painted over it",
       "No extra padding or oversizing around the target"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

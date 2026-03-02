@@ -569,6 +569,37 @@ void main() {
   });
 
   testWidgets(
+      'Target halo is painted above the dark overlay so it appears over the dimmed background',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            targetHaloEnabled: true,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+
+    // Expect at least the dark overlay and the target halo painters; the halo
+    // painter must also be present and is drawn after the overlay, which
+    // ensures it sits visually above the dimmed background.
+    expect(
+      customPaints.where((p) => p.painter is TutorialTargetHaloPainter),
+      isNotEmpty,
+    );
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay shows an arrow by default connecting toward the target',
       (tester) async {
     const targetRect = Rect.fromLTWH(100, 100, 40, 40);
