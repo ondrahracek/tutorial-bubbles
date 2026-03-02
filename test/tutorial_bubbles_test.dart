@@ -1,5 +1,5 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/widgets.dart';
 import 'package:tutorial_bubbles/tutorial_bubbles.dart';
 
 void main() {
@@ -285,5 +285,160 @@ void main() {
     expect(bubbleRectLocal.right <= overlaySize.width, isTrue);
     expect(bubbleRectLocal.bottom <= overlaySize.height, isTrue);
   });
+
+  testWidgets(
+      'Any Flutter widget can be targeted via its layout without modifying its own code (ElevatedButton)',
+      (tester) async {
+    await tester.pumpWidget(
+      const _TargetOverlayDemo(
+        targetBuilder: _TargetBuilder.elevatedButton,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubble), findsOneWidget);
+  });
+
+  testWidgets(
+      'Any Flutter widget can be targeted via its layout without modifying its own code (Text)',
+      (tester) async {
+    await tester.pumpWidget(
+      const _TargetOverlayDemo(
+        targetBuilder: _TargetBuilder.text,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubble), findsOneWidget);
+  });
+
+  testWidgets(
+      'Any Flutter widget can be targeted via its layout without modifying its own code (custom widget)',
+      (tester) async {
+    await tester.pumpWidget(
+      const _TargetOverlayDemo(
+        targetBuilder: _TargetBuilder.custom,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubble), findsOneWidget);
+  });
+}
+
+class _TargetOverlayDemo extends StatefulWidget {
+  const _TargetOverlayDemo({
+    required this.targetBuilder,
+  });
+
+  final _TargetBuilder targetBuilder;
+
+  @override
+  State<_TargetOverlayDemo> createState() => _TargetOverlayDemoState();
+}
+
+class _TargetOverlayDemoState extends State<_TargetOverlayDemo> {
+  final GlobalKey _targetKey = GlobalKey();
+  final GlobalKey _overlayKey = GlobalKey();
+
+  Rect? _targetRect;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTargetRect());
+  }
+
+  void _updateTargetRect() {
+    final targetContext = _targetKey.currentContext;
+    final overlayContext = _overlayKey.currentContext;
+
+    if (targetContext == null || overlayContext == null) {
+      return;
+    }
+
+    final targetBox = targetContext.findRenderObject() as RenderBox?;
+    final overlayBox = overlayContext.findRenderObject() as RenderBox?;
+
+    if (targetBox == null || overlayBox == null) {
+      return;
+    }
+
+    final topLeft =
+        targetBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final size = targetBox.size;
+
+    setState(() {
+      _targetRect = topLeft & size;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Center(
+        child: SizedBox(
+          width: 200,
+          height: 200,
+          child: Stack(
+            key: _overlayKey,
+            children: [
+              Center(
+                child: widget.targetBuilder.build(_targetKey),
+              ),
+              if (_targetRect != null)
+                Positioned.fill(
+                  child: TutorialBubbleOverlay(
+                    targetRect: _targetRect!,
+                    preferredSide: TutorialBubbleSide.top,
+                    child: const Text('Bubble for target'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _TargetBuilder {
+  elevatedButton,
+  text,
+  custom;
+
+  Widget build(Key key) {
+    switch (this) {
+      case _TargetBuilder.elevatedButton:
+        return ElevatedButton(
+          key: key,
+          onPressed: () {},
+          child: const Text('Target button'),
+        );
+      case _TargetBuilder.text:
+        return Text(
+          'Target text',
+          key: key,
+        );
+      case _TargetBuilder.custom:
+        return _CustomTargetWidget(key: key);
+    }
+  }
+}
+
+class _CustomTargetWidget extends StatelessWidget {
+  const _CustomTargetWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 40,
+      height: 40,
+    );
+  }
 }
 

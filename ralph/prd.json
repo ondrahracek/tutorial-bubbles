@@ -179,8 +179,8 @@
       "A plain Text or Icon widget is targetable the same way",
       "A custom widget with a nested subtree is targetable",
       "The target widget itself requires no changes to participate in the tutorial"
-    ],
-    "passes": false
+      ],
+      "passes": true
   },
   {
     "category": "functional",
