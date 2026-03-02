@@ -68,7 +68,7 @@
       "A multi-stop color fade is visually continuous across the bubble",
       "Both solid color and gradient are available through the same unified API"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

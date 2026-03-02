@@ -58,6 +58,62 @@ void main() {
     expect(decoration.color, customColor);
   });
 
+  testWidgets('TutorialBubble uses the provided background gradient',
+      (tester) async {
+    const gradient = LinearGradient(
+      colors: <Color>[
+        Color(0xFFFF0000),
+        Color(0xFF0000FF),
+      ],
+    );
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          backgroundGradient: gradient,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.gradient, gradient);
+    expect(decoration.color, isNull);
+  });
+
+  testWidgets(
+      'TutorialBubble prefers backgroundGradient over backgroundColor when both are provided',
+      (tester) async {
+    const gradient = LinearGradient(
+      colors: <Color>[
+        Color(0xFF00FF00),
+        Color(0xFF0000FF),
+      ],
+    );
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          backgroundColor: Color(0xFFFF0000),
+          backgroundGradient: gradient,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.gradient, gradient);
+    expect(decoration.color, isNull);
+  });
+
   testWidgets(
       'TutorialBubbleOverlay positions bubble on the preferred side of the target',
       (tester) async {

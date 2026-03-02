@@ -20,22 +20,27 @@ class TutorialBubble extends StatelessWidget {
     super.key,
     required this.child,
     this.backgroundColor,
+    this.backgroundGradient,
   });
 
   final Widget child;
   final Color? backgroundColor;
+  final Gradient? backgroundGradient;
 
   static const Color _defaultBackgroundColor = Color(0xFF303030);
 
   @override
   Widget build(BuildContext context) {
-    final color = backgroundColor ?? _defaultBackgroundColor;
+    final decoration = BoxDecoration(
+      color: backgroundGradient == null
+          ? (backgroundColor ?? _defaultBackgroundColor)
+          : null,
+      gradient: backgroundGradient,
+      borderRadius: BorderRadius.circular(12),
+    );
 
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: decoration,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -59,6 +64,7 @@ class TutorialBubbleOverlay extends StatelessWidget {
     required this.child,
     this.preferredSide = TutorialBubbleSide.automatic,
     this.backgroundColor,
+    this.backgroundGradient,
     this.padding = const EdgeInsets.all(8),
   });
 
@@ -71,6 +77,11 @@ class TutorialBubbleOverlay extends StatelessWidget {
 
   /// Optional override for the bubble background color.
   final Color? backgroundColor;
+
+  /// Optional override for the bubble background gradient.
+  ///
+  /// When provided, this takes precedence over [backgroundColor].
+  final Gradient? backgroundGradient;
 
   /// Padding between the bubble and the [targetRect].
   final EdgeInsets padding;
@@ -88,6 +99,7 @@ class TutorialBubbleOverlay extends StatelessWidget {
       ),
       child: TutorialBubble(
         backgroundColor: backgroundColor,
+        backgroundGradient: backgroundGradient,
         child: child,
       ),
     );

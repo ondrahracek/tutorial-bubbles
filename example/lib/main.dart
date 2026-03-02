@@ -84,6 +84,12 @@ class _TutorialBubbleDemoPageState extends State<_TutorialBubbleDemoPage> {
                   child: TutorialBubbleOverlay(
                     targetRect: _targetRect!,
                     preferredSide: TutorialBubbleSide.top,
+                    backgroundGradient: const LinearGradient(
+                      colors: <Color>[
+                        Color(0xFF42A5F5),
+                        Color(0xFFAB47BC),
+                      ],
+                    ),
                     child: const Text('Tap this button to get started'),
                   ),
                 ),
