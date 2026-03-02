@@ -846,8 +846,8 @@ class TutorialEngineController {
   /// Advances to the next step when the current step has completed.
   ///
   /// Returns true when the active step index changes. When the tutorial
-  /// has already run through all steps, this returns false and leaves the
-  /// controller in a finished state.
+  /// has already run through all steps or has been finished explicitly,
+  /// this returns false and leaves the controller in a finished state.
   bool advance() {
     if (_isFinished) {
       return false;
@@ -860,6 +860,35 @@ class TutorialEngineController {
 
     _isFinished = true;
     return false;
+  }
+
+  /// Skips the current step without requiring the target's action to run.
+  ///
+  /// This behaves similarly to [advance] in that it moves to the next step
+  /// in order, but is intended for flows where the current step should be
+  /// bypassed programmatically. When the tutorial has already finished,
+  /// this returns false and leaves the controller state unchanged.
+  bool skip() {
+    if (_isFinished) {
+      return false;
+    }
+
+    if (_currentIndex < _steps.length - 1) {
+      _currentIndex += 1;
+      return true;
+    }
+
+    _isFinished = true;
+    return false;
+  }
+
+  /// Marks the tutorial as finished from any step.
+  ///
+  /// After calling [finish], the controller enters a finished state and
+  /// subsequent calls to [advance] or [skip] will return false without
+  /// changing the current step index.
+  void finish() {
+    _isFinished = true;
   }
 }
 

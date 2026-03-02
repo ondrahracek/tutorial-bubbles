@@ -742,6 +742,78 @@ void main() {
     expect(controller.isFinished, isTrue);
   });
 
+  test(
+      'TutorialEngineController provides programmatic skip control that advances without requiring target action',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+    ];
+
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.currentIndex, 0);
+    expect(controller.currentStep.targetKey, key1);
+    expect(controller.isFinished, isFalse);
+
+    final skipped = controller.skip();
+    expect(skipped, isTrue);
+    expect(controller.currentIndex, 1);
+    expect(controller.currentStep.targetKey, key2);
+    expect(controller.isLastStep, isTrue);
+    expect(controller.isFinished, isFalse);
+
+    final skippedPastEnd = controller.skip();
+    expect(skippedPastEnd, isFalse);
+    expect(controller.currentIndex, 1);
+    expect(controller.isFinished, isTrue);
+  });
+
+  test(
+      'TutorialEngineController can be finished programmatically and prevents further advancement or skipping',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+    ];
+
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.isFinished, isFalse);
+    expect(controller.currentIndex, 0);
+
+    controller.finish();
+
+    expect(controller.isFinished, isTrue);
+    expect(controller.currentIndex, 0);
+
+    final advancedAfterFinish = controller.advance();
+    final skippedAfterFinish = controller.skip();
+
+    expect(advancedAfterFinish, isFalse);
+    expect(skippedAfterFinish, isFalse);
+    expect(controller.currentIndex, 0);
+    expect(controller.isFinished, isTrue);
+  });
+
   testWidgets(
       'TutorialBubbleOverlay blocks interactions outside the highlighted target',
       (tester) async {

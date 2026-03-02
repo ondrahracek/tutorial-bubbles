@@ -331,7 +331,7 @@
       "The controller can end the tutorial entirely from any step",
       "All three actions work when invoked programmatically (e.g. from a button or lifecycle)"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "API",
