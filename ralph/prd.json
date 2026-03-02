@@ -17,7 +17,7 @@
       "Package has a LICENSE file, a README.md, and a CHANGELOG.md",
       "pubspec.yaml has description, homepage or repository, and a valid version"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "package",
