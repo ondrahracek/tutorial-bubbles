@@ -409,7 +409,7 @@
       "No yellow or double underline appears on the bubble text",
       "Text displays cleanly without rich-text default underlines"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

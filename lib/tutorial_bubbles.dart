@@ -330,13 +330,15 @@ class TutorialTextBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultStyle = DefaultTextStyle.of(context).style;
+    final baseStyle = DefaultTextStyle.of(context)
+        .style
+        .copyWith(decoration: TextDecoration.none);
 
     TextStyle effectiveStyle;
     if (textStyle != null) {
-      effectiveStyle = defaultStyle.merge(textStyle);
+      effectiveStyle = baseStyle.merge(textStyle);
     } else {
-      effectiveStyle = defaultStyle.copyWith(
+      effectiveStyle = baseStyle.copyWith(
         color: textColor,
         fontSize: fontSize,
         fontFamily: fontFamily,

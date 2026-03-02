@@ -160,6 +160,50 @@ void main() {
   });
 
   testWidgets(
+      'TutorialTextBubble renders text without underlines by default',
+      (tester) async {
+    const text = 'No underline';
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialTextBubble(
+          text: text,
+        ),
+      ),
+    );
+
+    final textWidget = tester.widget<Text>(find.text(text));
+    final style = textWidget.style!;
+
+    expect(style.decoration, TextDecoration.none);
+  });
+
+  testWidgets(
+      'TutorialTextBubble respects explicit decoration when provided via textStyle',
+      (tester) async {
+    const text = 'Decorated text';
+    const overrideStyle = TextStyle(
+      decoration: TextDecoration.underline,
+    );
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialTextBubble(
+          text: text,
+          textStyle: overrideStyle,
+        ),
+      ),
+    );
+
+    final textWidget = tester.widget<Text>(find.text(text));
+    final style = textWidget.style!;
+
+    expect(style.decoration, TextDecoration.underline);
+  });
+
+  testWidgets(
       'TutorialBubble uses a sensible default background color when none is provided',
       (tester) async {
     await tester.pumpWidget(
