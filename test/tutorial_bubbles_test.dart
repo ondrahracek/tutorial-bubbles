@@ -764,6 +764,11 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    // Engine has steps configured but has not been started yet; start it so the
+    // overlay becomes visible for the first step.
+    controller.start();
+    await tester.pumpAndSettle();
+
     // Initially, the overlay highlights the first route's target.
     expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
     expect(find.text('First step'), findsOneWidget);
@@ -824,7 +829,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Overlay is visible for the initial step.
+    // Start the engine so the overlay becomes visible for the initial step.
+    controller.start();
+    await tester.pumpAndSettle();
     expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
 
     // Advance to the second (last) step.
@@ -881,7 +888,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Overlay is visible for the initial step.
+    // Start the engine so the overlay becomes visible for the initial step.
+    controller.start();
+    await tester.pumpAndSettle();
     expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
 
     // Finishing early hides the overlay without needing to reach the last step.
@@ -889,6 +898,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TutorialBubbleOverlay), findsNothing);
   });
+
 
   testWidgets(
       'Any Flutter widget can be targeted via its layout without modifying its own code (ElevatedButton)',
@@ -954,6 +964,38 @@ void main() {
     expect(controller.steps, hasLength(2));
     expect(controller.steps[0].targetKey, key1);
     expect(controller.steps[1].targetKey, key2);
+  });
+
+  test(
+      'TutorialEngineController does not start automatically and requires explicit start',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+    ];
+
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.isStarted, isFalse);
+    expect(controller.isStartedListenable.value, isFalse);
+
+    controller.start();
+
+    expect(controller.isStarted, isTrue);
+    expect(controller.isStartedListenable.value, isTrue);
+
+    // Calling start again should be a no-op.
+    controller.start();
+    expect(controller.isStarted, isTrue);
   });
 
   test('TutorialEngineController rejects an empty list of steps', () {

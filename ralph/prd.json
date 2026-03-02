@@ -250,7 +250,7 @@
       "Calling start shows the overlay and the first step",
       "The engine remains inactive until start is invoked"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "tutorial-engine",

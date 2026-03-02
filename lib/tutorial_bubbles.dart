@@ -1008,7 +1008,8 @@ class TutorialEngineController {
     required List<TutorialStep> steps,
   })  : assert(steps.isNotEmpty, 'TutorialEngineController requires at least one step.'),
         _steps = List.unmodifiable(steps),
-        _currentIndexNotifier = ValueNotifier<int>(0);
+        _currentIndexNotifier = ValueNotifier<int>(0),
+        _isStartedNotifier = ValueNotifier<bool>(false);
 
   final List<TutorialStep> _steps;
 
@@ -1019,6 +1020,7 @@ class TutorialEngineController {
   int get totalSteps => _steps.length;
 
   int _currentIndex = 0;
+  bool _isStarted = false;
 
   /// Index of the currently active step in [steps].
   int get currentIndex => _currentIndex;
@@ -1038,6 +1040,18 @@ class TutorialEngineController {
   /// trigger additional notifications.
   ValueNotifier<int> get currentIndexListenable => _currentIndexNotifier;
 
+  final ValueNotifier<bool> _isStartedNotifier;
+
+  /// Whether the tutorial has been explicitly started.
+  ///
+  /// The tutorial overlay does not become visible until [start] has been
+  /// called. Once started, this remains true for the lifetime of the
+  /// controller.
+  bool get isStarted => _isStarted;
+
+  /// Listenable that fires when the started state changes.
+  ValueNotifier<bool> get isStartedListenable => _isStartedNotifier;
+
   bool _isFinished = false;
 
   /// Whether the tutorial has finished executing all steps.
@@ -1050,6 +1064,18 @@ class TutorialEngineController {
   /// This is notified when the tutorial reaches the end of the steps via
   /// [advance] or [skip], or when [finish] is called explicitly.
   ValueNotifier<bool> get isFinishedListenable => _isFinishedNotifier;
+
+  /// Marks the tutorial as started so that the overlay may become visible.
+  ///
+  /// Calling [start] multiple times is safe and has no additional effect
+  /// after the first invocation.
+  void start() {
+    if (_isStarted) {
+      return;
+    }
+    _isStarted = true;
+    _isStartedNotifier.value = true;
+  }
 
   /// Advances to the next step when the current step has completed.
   ///
