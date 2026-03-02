@@ -1,0 +1,366 @@
+[
+  {
+    "category": "package",
+    "description": "Flutter package scaffolded with standard structure and analysis passing",
+    "steps": [
+      "flutter pub get succeeds in the package directory",
+      "flutter analyze reports no issues",
+      "Package has lib/, test/, and example/ directories"
+    ],
+    "passes": false
+  },
+  {
+    "category": "package",
+    "description": "Package is configured to be publishable on pub.dev",
+    "steps": [
+      "flutter pub publish --dry-run completes without errors",
+      "Package has a LICENSE file, a README.md, and a CHANGELOG.md",
+      "pubspec.yaml has description, homepage or repository, and a valid version"
+    ],
+    "passes": false
+  },
+  {
+    "category": "package",
+    "description": "Example app demonstrates the package in a running Flutter app",
+    "steps": [
+      "flutter run in example/ builds and launches without errors",
+      "Example shows at least one bubble pointing at a target widget",
+      "Example source code is minimal and readable as usage documentation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble appears at a configurable preferred side relative to the target",
+    "steps": [
+      "When the preferred side is set to top, the bubble appears above the target",
+      "When the preferred side is set to bottom, the bubble appears below the target",
+      "When set to left or right, the bubble appears on the correct side",
+      "An automatic mode picks the side with the most available space"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble never clips off-screen regardless of where the target sits",
+    "steps": [
+      "A target near the top edge causes the bubble to not clip off the top",
+      "A target near a side edge causes the bubble to not clip off that side",
+      "The bubble is fully visible for any target position on screen"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble background can be set to a solid color",
+    "steps": [
+      "Passing a red color renders the bubble with a red background",
+      "Changing to a blue color renders a blue background",
+      "A sensible default color is used when no color is specified"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble background can be set to a gradient or color fade",
+    "steps": [
+      "Passing a gradient renders the bubble with that gradient across its surface",
+      "A multi-stop color fade is visually continuous across the bubble",
+      "Both solid color and gradient are available through the same unified API"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble text content and style are fully configurable",
+    "steps": [
+      "The bubble renders the text content passed to it",
+      "Text color, size, font family, and weight can each be changed independently",
+      "Passing a complete custom text style overrides all individual text settings at once"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble has an optional glow/halo effect",
+    "steps": [
+      "When the bubble halo is enabled, a visible glow surrounds the bubble edges",
+      "The halo color and spread can be adjusted",
+      "Disabling the halo removes it entirely with no residual visual effect"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble plays a spring-like scale animation when tapped",
+    "steps": [
+      "Tapping the bubble triggers a visible bouncy scale animation",
+      "The bubble returns to its original size after the animation completes",
+      "The animation feels elastic or spring-like rather than linear"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Arrow between bubble and target is optional and can be toggled",
+    "steps": [
+      "When the arrow is enabled, a visible arrow appears connecting bubble and target",
+      "When the arrow is disabled, no arrow is rendered and the bubble stands alone",
+      "The default state of the arrow is clearly documented"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Arrow follows a smooth curved path from bubble to target",
+    "steps": [
+      "The arrow path is visibly curved, not a straight line",
+      "The curve flows smoothly from the bubble side toward the target",
+      "The arrow has a pointed tip or arrowhead at the target end"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Arrow direction automatically matches the bubble's side relative to the target",
+    "steps": [
+      "When bubble is above the target, the arrow originates from the bubble's bottom and points toward the target's top",
+      "When bubble is to the left of the target, the arrow points rightward",
+      "Arrow origin and direction update automatically when the bubble side changes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Arrow tip lands precisely at the target's border without overlapping it",
+    "steps": [
+      "The arrow tip visually meets the edge of the target widget",
+      "The arrow does not extend into or overlap the target's interior",
+      "This holds for targets of varying sizes at different positions on screen"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Arrow has an optional glow/halo effect",
+    "steps": [
+      "When the arrow halo is enabled, a visible glow surrounds the arrow stroke",
+      "The arrow halo can be adjusted independently from the bubble halo",
+      "Disabling the arrow halo removes it without affecting the arrow itself"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Overlay darkens everything on screen except the bubble, arrow, and target",
+    "steps": [
+      "When the overlay is active, background UI is visibly dimmed",
+      "The target widget appears at full brightness within the overlay",
+      "The bubble and arrow are not dimmed",
+      "The darkness level of the overlay is configurable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Optional glow/halo around the target widget",
+    "steps": [
+      "When the target halo is enabled, a visible glow surrounds the target",
+      "Tapping the target still works normally when the halo is active",
+      "No halo appears when the option is disabled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Any Flutter widget can be targeted without modifying its own code",
+    "steps": [
+      "A standard ElevatedButton is targetable without altering its implementation",
+      "A plain Text or Icon widget is targetable the same way",
+      "A custom widget with a nested subtree is targetable",
+      "The target widget itself requires no changes to participate in the tutorial"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tutorial flow can span multiple screens; steps may target widgets on different routes",
+    "steps": [
+      "When a step's target action navigates to a new screen, the tutorial advances and the next step can target a widget on the newly shown screen",
+      "The overlay is rendered above the Navigator so it appears over the active route",
+      "The bubble and highlight update to the current step's target, which may be on a different screen than the previous step"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tapping the target during the tutorial triggers its normal behavior",
+    "steps": [
+      "A button that navigates to another screen still navigates when tapped during the tutorial",
+      "A button's action callback fires as expected when tapped during the tutorial",
+      "The target behaves identically to how it would with no overlay present"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "All interactions outside the highlighted target are blocked while overlay is active",
+    "steps": [
+      "Tapping any button outside the target during the tutorial produces no action",
+      "Scrolling and gestures in non-target areas are intercepted by the overlay",
+      "Only the highlighted target remains interactive"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tapping the bubble or dark background can optionally advance the tutorial",
+    "steps": [
+      "When this option is enabled, tapping the dark overlay area moves to the next step",
+      "When this option is enabled, tapping the bubble also moves to the next step",
+      "When this option is disabled, only the target interaction advances the tutorial"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Bubble and overlay work as a standalone spotlight without any tutorial engine",
+    "steps": [
+      "A single bubble pointing at one target can be shown with no step list and no controller",
+      "No engine or sequence setup is required for this single-spotlight usage",
+      "The example app demonstrates this standalone mode"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "Engine accepts a list of steps; each step defines a target widget and bubble content",
+    "steps": [
+      "Creating the engine with a list of steps succeeds",
+      "Each step specifies which widget to target and what text or content to show in the bubble",
+      "The step structure is sufficient for the engine to render the bubble and overlay correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "Engine does not show until explicitly started",
+    "steps": [
+      "Creating the engine with steps does not display any overlay or bubble",
+      "Calling start shows the overlay and the first step",
+      "The engine remains inactive until start is invoked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "Engine executes steps in order and advances when the step completion condition is met",
+    "steps": [
+      "Completing a step (target tap or tap-outside when enabled) automatically transitions to the next",
+      "Each step shows its bubble on the correct target",
+      "Steps run in the order they were defined"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "Tutorial ends and overlay dismisses when the last step completes or when finished early",
+    "steps": [
+      "Completing the final step dismisses the overlay and ends the tutorial",
+      "Finishing or skipping the tutorial from any step also dismisses the overlay",
+      "After ending, the engine is in a finished state and no overlay remains visible"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "When the current step's target is not yet on screen, the engine handles it gracefully",
+    "steps": [
+      "A step whose target is on a screen not yet pushed does not crash the engine",
+      "The overlay appears; the highlight and bubble update when the target becomes available",
+      "Or the behavior is clearly documented so consumers order steps to match their navigation flow"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "Tutorial engine reuses the same bubble, arrow, and overlay components as standalone mode",
+    "steps": [
+      "No duplicate implementation of bubble, arrow, or overlay for the engine",
+      "The engine composes the same visual components used in standalone spotlight mode",
+      "Changes to bubble styling apply to both engine and standalone usage"
+    ],
+    "passes": false
+  },
+  {
+    "category": "tutorial-engine",
+    "description": "Visual parameters have global defaults and can be overridden per step",
+    "steps": [
+      "A global bubble color applies to all steps unless a step defines its own",
+      "A step with its own bubble color uses that color instead of the global one",
+      "Arrow visibility, halo settings, overlay opacity, and text style follow the same global-then-step-override pattern"
+    ],
+    "passes": false
+  },
+  {
+    "category": "storage",
+    "description": "Tutorial engine persists progress and resumes from where it left off across app restarts",
+    "steps": [
+      "Completing three steps, closing the app, and reopening resumes from step four",
+      "Resetting the saved state causes the tutorial to restart from the first step",
+      "Persistence requires no additional configuration from the package consumer"
+    ],
+    "passes": false
+  },
+  {
+    "category": "storage",
+    "description": "Progress is only saved at configurable checkpoint steps",
+    "steps": [
+      "With checkpoints at steps 2 and 5, only reaching those steps updates the saved position",
+      "Completing a non-checkpoint step does not advance the persisted position",
+      "Saving at every step, saving only at checkpoints, and never saving are all valid configurations"
+    ],
+    "passes": false
+  },
+  {
+    "category": "API",
+    "description": "Controller provides programmatic control: advance, skip, finish",
+    "steps": [
+      "The controller can advance to the next step from outside the tutorial UI",
+      "The controller can skip the current step without triggering the target's action",
+      "The controller can end the tutorial entirely from any step",
+      "All three actions work when invoked programmatically (e.g. from a button or lifecycle)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "API",
+    "description": "Controller exposes state and notifies when the active step changes",
+    "steps": [
+      "The controller exposes the current step index and total step count as readable values",
+      "A listener or stream fires whenever the active step changes",
+      "The app can react to step changes (e.g. enable/disable a Next button)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "API",
+    "description": "Controller allows registering a callback when the tutorial completes",
+    "steps": [
+      "The app can register an on-complete callback when creating or configuring the engine",
+      "The callback runs when the tutorial ends (last step completed, or finished/skipped early)",
+      "The callback receives enough context to know how the tutorial ended (completed vs skipped vs finished)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "API",
+    "description": "Controller can navigate to the previous step",
+    "steps": [
+      "The controller provides a way to go back to the previous step",
+      "Going back from step 2 shows step 1 again with its target and bubble",
+      "Going back from the first step either does nothing or is undefined and documented"
+    ],
+    "passes": false
+  }
+]
