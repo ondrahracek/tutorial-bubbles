@@ -1007,14 +1007,100 @@ class _AbsorbingRegion extends StatelessWidget {
   }
 }
 
+/// Immutable configuration for visual parameters used by the tutorial engine.
+///
+/// These values can be provided globally to [TutorialEngine] and optionally
+/// overridden per [TutorialStep]. When both a global and per-step value are
+/// provided, the per-step value wins.
+class TutorialVisuals {
+  const TutorialVisuals({
+    this.bubbleBackgroundColor,
+    this.bubbleBackgroundGradient,
+    this.overlayColor,
+    this.arrowEnabled,
+    this.bubbleHaloEnabled,
+    this.bubbleHaloColor,
+    this.targetHaloEnabled,
+    this.targetHaloColor,
+    this.arrowHaloEnabled,
+    this.arrowHaloColor,
+    this.textStyle,
+  });
+
+  /// Background color applied to the bubble when no gradient is used.
+  final Color? bubbleBackgroundColor;
+
+  /// Gradient applied to the bubble background.
+  ///
+  /// When provided, this takes precedence over [bubbleBackgroundColor].
+  final Gradient? bubbleBackgroundGradient;
+
+  /// Color of the dimmed overlay that surrounds the target and bubble.
+  final Color? overlayColor;
+
+  /// Whether the arrow connecting the bubble toward the target is visible.
+  final bool? arrowEnabled;
+
+  /// Whether the bubble should render a halo/glow.
+  final bool? bubbleHaloEnabled;
+
+  /// Optional color for the bubble halo.
+  final Color? bubbleHaloColor;
+
+  /// Whether the target should render a halo/glow.
+  final bool? targetHaloEnabled;
+
+  /// Optional color for the target halo.
+  final Color? targetHaloColor;
+
+  /// Whether the arrow should render a halo/glow.
+  final bool? arrowHaloEnabled;
+
+  /// Optional color for the arrow halo.
+  final Color? arrowHaloColor;
+
+  /// Optional text style applied to bubble content.
+  ///
+  /// This is applied via [DefaultTextStyle.merge] so that it can provide
+  /// a consistent baseline across all steps while still allowing widgets
+  /// such as [TutorialTextBubble] to override specific fields when needed.
+  final TextStyle? textStyle;
+
+  /// Returns a new [TutorialVisuals] where non-null fields from [overrides]
+  /// replace the corresponding fields in this instance.
+  TutorialVisuals merge(TutorialVisuals? overrides) {
+    if (overrides == null) {
+      return this;
+    }
+
+    return TutorialVisuals(
+      bubbleBackgroundColor:
+          overrides.bubbleBackgroundColor ?? bubbleBackgroundColor,
+      bubbleBackgroundGradient:
+          overrides.bubbleBackgroundGradient ?? bubbleBackgroundGradient,
+      overlayColor: overrides.overlayColor ?? overlayColor,
+      arrowEnabled: overrides.arrowEnabled ?? arrowEnabled,
+      bubbleHaloEnabled: overrides.bubbleHaloEnabled ?? bubbleHaloEnabled,
+      bubbleHaloColor: overrides.bubbleHaloColor ?? bubbleHaloColor,
+      targetHaloEnabled: overrides.targetHaloEnabled ?? targetHaloEnabled,
+      targetHaloColor: overrides.targetHaloColor ?? targetHaloColor,
+      arrowHaloEnabled: overrides.arrowHaloEnabled ?? arrowHaloEnabled,
+      arrowHaloColor: overrides.arrowHaloColor ?? arrowHaloColor,
+      textStyle: overrides.textStyle ?? textStyle,
+    );
+  }
+}
+
 /// Immutable description of a single tutorial step.
 ///
 /// Each step identifies a target widget by [targetKey] and provides
-/// [bubbleBuilder] to build the bubble content for that step.
+/// [bubbleBuilder] to build the bubble content for that step. Visual
+/// parameters can optionally be customized per-step via [visuals].
 class TutorialStep {
   const TutorialStep({
     required this.targetKey,
     required this.bubbleBuilder,
+    this.visuals,
   });
 
   /// Key of the widget that should be highlighted for this step.
@@ -1025,6 +1111,12 @@ class TutorialStep {
 
   /// Builder used to create the bubble contents for this step.
   final WidgetBuilder bubbleBuilder;
+
+  /// Optional per-step overrides for visual parameters.
+  ///
+  /// When provided together with [TutorialEngine.globalVisuals], any
+  /// non-null fields here override the corresponding global defaults.
+  final TutorialVisuals? visuals;
 }
 
 /// A simple controller that owns a list of [TutorialStep]s.
@@ -1180,6 +1272,7 @@ class TutorialEngine extends StatefulWidget {
     required this.child,
     this.advanceOnBubbleTap = false,
     this.advanceOnOverlayTap = false,
+    this.globalVisuals,
   });
 
   /// Controller that owns the ordered list of tutorial steps.
@@ -1204,6 +1297,12 @@ class TutorialEngine extends StatefulWidget {
   /// are instead routed to [TutorialEngineController.advance].
   final bool advanceOnOverlayTap;
 
+  /// Optional global defaults for visual parameters applied to all steps.
+  ///
+  /// Individual [TutorialStep.visuals] can override these defaults on a
+  /// per-step basis.
+  final TutorialVisuals? globalVisuals;
+
   @override
   State<TutorialEngine> createState() => _TutorialEngineState();
 }
@@ -1214,6 +1313,17 @@ class _TutorialEngineState extends State<TutorialEngine> {
   bool _pendingTargetRectUpdate = false;
 
   TutorialEngineController get _controller => widget.controller;
+
+  TutorialVisuals? _resolveVisuals() {
+    final TutorialVisuals? global = widget.globalVisuals;
+    final TutorialVisuals? stepVisuals = _controller.currentStep.visuals;
+
+    if (global == null) {
+      return stepVisuals;
+    }
+
+    return global.merge(stepVisuals);
+  }
 
   @override
   void initState() {
@@ -1326,6 +1436,8 @@ class _TutorialEngineState extends State<TutorialEngine> {
     final bool showOverlay =
         !_controller.isFinished && _currentTargetRect != null;
 
+    final visuals = _resolveVisuals();
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return Stack(
@@ -1338,18 +1450,38 @@ class _TutorialEngineState extends State<TutorialEngine> {
                 child: TutorialBubbleOverlay(
                   targetRect: _currentTargetRect!,
                   preferredSide: TutorialBubbleSide.automatic,
+                  overlayColor:
+                      visuals?.overlayColor ?? const Color(0xB3000000),
+                  backgroundColor: visuals?.bubbleBackgroundColor,
+                  backgroundGradient: visuals?.bubbleBackgroundGradient,
+                  targetHaloEnabled: visuals?.targetHaloEnabled ?? false,
+                  targetHaloColor: visuals?.targetHaloColor,
+                  bubbleHaloEnabled: visuals?.bubbleHaloEnabled ?? false,
+                  bubbleHaloColor: visuals?.bubbleHaloColor,
+                  arrowEnabled: visuals?.arrowEnabled ?? true,
+                  arrowHaloEnabled: visuals?.arrowHaloEnabled ?? false,
+                  arrowHaloColor: visuals?.arrowHaloColor,
                   onBackgroundTap:
                       widget.advanceOnOverlayTap ? _handleAdvanceRequested : null,
                   child: Builder(
                     builder: (context) {
                       final bubble = _controller.currentStep.bubbleBuilder(context);
+                      Widget styledBubble = bubble;
+
+                      if (visuals?.textStyle != null) {
+                        styledBubble = DefaultTextStyle.merge(
+                          style: visuals!.textStyle!,
+                          child: styledBubble,
+                        );
+                      }
+
                       if (!widget.advanceOnBubbleTap) {
-                        return bubble;
+                        return styledBubble;
                       }
                       return GestureDetector(
                         behavior: HitTestBehavior.translucent,
                         onTap: _handleAdvanceRequested,
-                        child: bubble,
+                        child: styledBubble,
                       );
                     },
                   ),

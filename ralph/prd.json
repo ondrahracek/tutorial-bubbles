@@ -300,7 +300,7 @@
       "A step with its own bubble color uses that color instead of the global one",
       "Arrow visibility, halo settings, overlay opacity, and text style follow the same global-then-step-override pattern"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "storage",

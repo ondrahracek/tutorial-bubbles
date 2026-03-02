@@ -1187,6 +1187,185 @@ void main() {
     expect(recordedIndices, [1, 2]);
   });
 
+  test('TutorialVisuals.merge prefers non-null override fields', () {
+    const base = TutorialVisuals(
+      bubbleBackgroundColor: Color(0xFF000000),
+      overlayColor: Color(0x11000000),
+      arrowEnabled: true,
+      bubbleHaloEnabled: false,
+    );
+
+    const overrides = TutorialVisuals(
+      bubbleBackgroundColor: Color(0xFFFFFFFF),
+      arrowEnabled: false,
+    );
+
+    final merged = base.merge(overrides);
+
+    expect(merged.bubbleBackgroundColor, const Color(0xFFFFFFFF));
+    expect(merged.overlayColor, const Color(0x11000000));
+    expect(merged.arrowEnabled, isFalse);
+    expect(merged.bubbleHaloEnabled, isFalse);
+  });
+
+  testWidgets(
+      'TutorialEngine applies global visual defaults to the overlay and bubble',
+      (tester) async {
+    final key = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Step',
+          ),
+        ),
+      ],
+    );
+
+    const overlayColor = Color(0x66000000);
+    const bubbleColor = Color(0xFF123456);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          globalVisuals: const TutorialVisuals(
+            overlayColor: overlayColor,
+            bubbleBackgroundColor: bubbleColor,
+            arrowEnabled: false,
+            bubbleHaloEnabled: true,
+          ),
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    final overlay = tester.widget<TutorialBubbleOverlay>(
+      find.byType(TutorialBubbleOverlay),
+    );
+
+    expect(overlay.overlayColor, overlayColor);
+    expect(overlay.backgroundColor, bubbleColor);
+    expect(overlay.arrowEnabled, isFalse);
+    expect(overlay.bubbleHaloEnabled, isTrue);
+  });
+
+  testWidgets(
+      'Per-step TutorialVisuals overrides global defaults for overlay and arrow',
+      (tester) async {
+    final key = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Visual step'),
+          visuals: const TutorialVisuals(
+            overlayColor: Color(0x22000000),
+            arrowEnabled: false,
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          globalVisuals: const TutorialVisuals(
+            overlayColor: Color(0x88000000),
+            arrowEnabled: true,
+          ),
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    final overlay = tester.widget<TutorialBubbleOverlay>(
+      find.byType(TutorialBubbleOverlay),
+    );
+
+    expect(overlay.overlayColor, const Color(0x22000000));
+    expect(overlay.arrowEnabled, isFalse);
+  });
+
+  testWidgets(
+      'TutorialEngine applies global text style defaults that can be overridden per step',
+      (tester) async {
+    final key = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Visual step',
+          ),
+        ),
+      ],
+    );
+
+    const globalTextStyle = TextStyle(
+      color: Color(0xFF0099FF),
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          globalVisuals: const TutorialVisuals(
+            textStyle: globalTextStyle,
+          ),
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    final textWidget = tester.widget<Text>(find.text('Visual step'));
+    final style = textWidget.style!;
+
+    expect(style.color, globalTextStyle.color);
+    expect(style.fontSize, globalTextStyle.fontSize);
+    expect(style.fontWeight, globalTextStyle.fontWeight);
+  });
+
   test(
       'TutorialEngineController provides programmatic skip control that advances without requiring target action',
       () {
