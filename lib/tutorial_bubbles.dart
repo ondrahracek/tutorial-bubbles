@@ -552,61 +552,89 @@ class _TutorialArrowPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
+    // Arrow runs from bubble side toward the target; tip lands at target edge.
+    final Offset toTarget = _targetEdgePoint(side);
+    final Offset fromBubble = _bubbleSidePoint(side, toTarget);
+
     final Path path = Path();
+    path.moveTo(fromBubble.dx, fromBubble.dy);
 
-    Offset start;
-    Offset end;
-
-    switch (side) {
-      case TutorialBubbleSide.top:
-        start = Offset(targetRect.center.dx, targetRect.top);
-        end = start.translate(0, -24);
-        break;
-      case TutorialBubbleSide.bottom:
-        start = Offset(targetRect.center.dx, targetRect.bottom);
-        end = start.translate(0, 24);
-        break;
-      case TutorialBubbleSide.left:
-        start = Offset(targetRect.left, targetRect.center.dy);
-        end = start.translate(-24, 0);
-        break;
-      case TutorialBubbleSide.right:
-        start = Offset(targetRect.right, targetRect.center.dy);
-        end = start.translate(24, 0);
-        break;
-      case TutorialBubbleSide.automatic:
-        start = Offset(targetRect.center.dx, targetRect.bottom);
-        end = start.translate(0, 24);
-        break;
+    // Smooth curved path: quadratic Bezier with control point offset
+    // perpendicular to the line so the curve bulges naturally.
+    final Offset mid = Offset(
+      (fromBubble.dx + toTarget.dx) / 2,
+      (fromBubble.dy + toTarget.dy) / 2,
+    );
+    final Offset line = toTarget - fromBubble;
+    final double dist = line.distance;
+    if (dist > 0) {
+      final Offset perp = Offset(-line.dy / dist, line.dx / dist);
+      // Bulge amount: ~15% of segment length for a visible curve.
+      const double bulgeFraction = 0.15;
+      final Offset control = mid + perp * (dist * bulgeFraction);
+      path.quadraticBezierTo(
+        control.dx,
+        control.dy,
+        toTarget.dx,
+        toTarget.dy,
+      );
+    } else {
+      path.lineTo(toTarget.dx, toTarget.dy);
     }
-
-    path.moveTo(start.dx, start.dy);
-    path.lineTo(end.dx, end.dy);
 
     canvas.drawPath(path, paint);
 
-    // Draw a small arrowhead at the end of the line.
-    const double arrowHeadSize = 6;
-    final Offset direction = (start - end);
-    if (direction == Offset.zero) {
-      return;
+    // Arrowhead at the target end.
+    if (dist > 0) {
+      const double arrowHeadSize = 6;
+      final Offset normalized = line / dist;
+      final Offset perp = Offset(-normalized.dy, normalized.dx);
+      final Offset left = toTarget +
+          normalized * arrowHeadSize +
+          perp * (arrowHeadSize / 2);
+      final Offset right = toTarget +
+          normalized * arrowHeadSize -
+          perp * (arrowHeadSize / 2);
+      final Path head = Path()
+        ..moveTo(toTarget.dx, toTarget.dy)
+        ..lineTo(left.dx, left.dy)
+        ..moveTo(toTarget.dx, toTarget.dy)
+        ..lineTo(right.dx, right.dy);
+      canvas.drawPath(head, paint);
     }
-    final Offset normalized = direction / direction.distance;
-    final Offset perp = Offset(-normalized.dy, normalized.dx);
+  }
 
-    final Offset tip = end;
-    final Offset left =
-        tip + normalized * arrowHeadSize + perp * (arrowHeadSize / 2);
-    final Offset right =
-        tip + normalized * arrowHeadSize - perp * (arrowHeadSize / 2);
+  /// Point on the target rect edge where the arrow tip lands (facing the bubble).
+  Offset _targetEdgePoint(TutorialBubbleSide side) {
+    switch (side) {
+      case TutorialBubbleSide.top:
+        return Offset(targetRect.center.dx, targetRect.top);
+      case TutorialBubbleSide.bottom:
+        return Offset(targetRect.center.dx, targetRect.bottom);
+      case TutorialBubbleSide.left:
+        return Offset(targetRect.left, targetRect.center.dy);
+      case TutorialBubbleSide.right:
+        return Offset(targetRect.right, targetRect.center.dy);
+      case TutorialBubbleSide.automatic:
+        return Offset(targetRect.center.dx, targetRect.bottom);
+    }
+  }
 
-    final Path head = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo(left.dx, left.dy)
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo(right.dx, right.dy);
-
-    canvas.drawPath(head, paint);
+  /// Point on the bubble side (opposite the target) for the start of the arrow.
+  Offset _bubbleSidePoint(TutorialBubbleSide side, Offset toTarget) {
+    const double bubbleOffset = 24;
+    switch (side) {
+      case TutorialBubbleSide.top:
+        return toTarget.translate(0, -bubbleOffset);
+      case TutorialBubbleSide.bottom:
+        return toTarget.translate(0, bubbleOffset);
+      case TutorialBubbleSide.left:
+        return toTarget.translate(-bubbleOffset, 0);
+      case TutorialBubbleSide.right:
+        return toTarget.translate(bubbleOffset, 0);
+      case TutorialBubbleSide.automatic:
+        return toTarget.translate(0, bubbleOffset);
+    }
   }
 
   @override

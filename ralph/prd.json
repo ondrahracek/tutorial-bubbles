@@ -118,7 +118,7 @@
       "The curve flows smoothly from the bubble side toward the target",
       "The arrow has a pointed tip or arrowhead at the target end"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
