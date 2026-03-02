@@ -158,9 +158,13 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
         break;
     }
 
-    // Keep the bubble within the available bounds as much as possible.
-    final clampedX = x.clamp(0.0, size.width - childSize.width);
-    final clampedY = y.clamp(0.0, size.height - childSize.height);
+    // Keep the bubble within the available bounds as much as possible, even
+    // when the bubble is larger than the overlay in one or both dimensions.
+    final maxX = size.width - childSize.width;
+    final maxY = size.height - childSize.height;
+
+    final clampedX = x.clamp(0.0, maxX >= 0 ? maxX : 0.0);
+    final clampedY = y.clamp(0.0, maxY >= 0 ? maxY : 0.0);
 
     return Offset(clampedX, clampedY);
   }

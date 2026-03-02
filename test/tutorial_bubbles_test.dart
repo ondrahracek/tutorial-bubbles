@@ -128,5 +128,106 @@ void main() {
 
     expect(bubbleRectLocal.top >= targetRectLocal.bottom, isTrue);
   });
+
+  testWidgets(
+      'TutorialBubbleOverlay keeps the bubble fully visible near the top edge',
+      (tester) async {
+    const overlaySize = Size(200, 200);
+    const overlayKey = ValueKey('overlayTopEdge');
+    const targetRectLocal = Rect.fromLTWH(80, 4, 40, 40);
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            key: overlayKey,
+            width: overlaySize.width,
+            height: overlaySize.height,
+            child: const TutorialBubbleOverlay(
+              targetRect: targetRectLocal,
+              preferredSide: TutorialBubbleSide.top,
+              child: SizedBox(width: 40, height: 40),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final overlayRect = tester.getRect(find.byKey(overlayKey));
+    final bubbleRectGlobal = tester.getRect(find.byType(TutorialBubble));
+    final bubbleRectLocal = bubbleRectGlobal.shift(-overlayRect.topLeft);
+
+    expect(bubbleRectLocal.top >= 0, isTrue);
+    expect(bubbleRectLocal.bottom <= overlaySize.height, isTrue);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay keeps the bubble fully visible near the right edge',
+      (tester) async {
+    const overlaySize = Size(200, 200);
+    const overlayKey = ValueKey('overlayRightEdge');
+    const targetRectLocal = Rect.fromLTWH(180, 80, 40, 40);
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            key: overlayKey,
+            width: overlaySize.width,
+            height: overlaySize.height,
+            child: const TutorialBubbleOverlay(
+              targetRect: targetRectLocal,
+              preferredSide: TutorialBubbleSide.right,
+              child: SizedBox(width: 40, height: 40),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final overlayRect = tester.getRect(find.byKey(overlayKey));
+    final bubbleRectGlobal = tester.getRect(find.byType(TutorialBubble));
+    final bubbleRectLocal = bubbleRectGlobal.shift(-overlayRect.topLeft);
+
+    expect(bubbleRectLocal.left >= 0, isTrue);
+    expect(bubbleRectLocal.right <= overlaySize.width, isTrue);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay keeps the bubble fully visible for a center target',
+      (tester) async {
+    const overlaySize = Size(200, 200);
+    const overlayKey = ValueKey('overlayCenter');
+    const targetRectLocal = Rect.fromLTWH(80, 80, 40, 40);
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            key: overlayKey,
+            width: overlaySize.width,
+            height: overlaySize.height,
+            child: const TutorialBubbleOverlay(
+              targetRect: targetRectLocal,
+              preferredSide: TutorialBubbleSide.bottom,
+              child: SizedBox(width: 40, height: 40),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final overlayRect = tester.getRect(find.byKey(overlayKey));
+    final bubbleRectGlobal = tester.getRect(find.byType(TutorialBubble));
+    final bubbleRectLocal = bubbleRectGlobal.shift(-overlayRect.topLeft);
+
+    expect(bubbleRectLocal.left >= 0, isTrue);
+    expect(bubbleRectLocal.top >= 0, isTrue);
+    expect(bubbleRectLocal.right <= overlaySize.width, isTrue);
+    expect(bubbleRectLocal.bottom <= overlaySize.height, isTrue);
+  });
 }
 

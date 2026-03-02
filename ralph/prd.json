@@ -48,7 +48,7 @@
       "A target near a side edge causes the bubble to not clip off that side",
       "The bubble is fully visible for any target position on screen"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

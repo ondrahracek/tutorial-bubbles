@@ -3,3 +3,4 @@
 2026-03-02: Made package publishable on pub.dev by adding LICENSE, README, and CHANGELOG; flutter pub publish --dry-run now passes.
 2026-03-02: Added TutorialBubbleSide enum and TutorialBubbleOverlay to position bubbles on configurable sides (including automatic side selection) with widget tests; flutter analyze/test and example analyze all passing.
 2026-03-02: Updated example app to show a TutorialBubbleOverlay pointing at a target button, keeping the code minimal; flutter analyze/test in root and analyze in example all passing.
+2026-03-02: Ensured TutorialBubbleOverlay keeps bubbles fully on-screen near edges with improved clamping logic and new widget tests; flutter analyze/test in root and analyze in example all passing.
