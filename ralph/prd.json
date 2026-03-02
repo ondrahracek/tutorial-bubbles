@@ -58,7 +58,7 @@
       "Changing to a blue color renders a blue background",
       "A sensible default color is used when no color is specified"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

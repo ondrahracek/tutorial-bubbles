@@ -18,6 +18,7 @@ class TutorialBubblesExampleApp extends StatelessWidget {
         ),
         body: const Center(
           child: TutorialBubble(
+            backgroundColor: Colors.blueAccent,
             child: Text('Tutorial bubbles package scaffold'),
           ),
         ),
