@@ -1383,6 +1383,7 @@ class TutorialEngine extends StatefulWidget {
     this.advanceOnOverlayTap = false,
     this.globalVisuals,
     this.persistenceId,
+    this.checkpointSteps,
     this.onComplete,
   });
 
@@ -1417,11 +1418,20 @@ class TutorialEngine extends StatefulWidget {
   /// Optional identifier used to persist and restore tutorial progress.
   ///
   /// When provided, the engine saves the zero-based index of the current step
-  /// using [TutorialProgressStorage] whenever the active step changes, and
+  /// using [TutorialProgressStorage] according to [checkpointSteps], and
   /// clears the saved value when the tutorial finishes. On a subsequent app
   /// run, creating a new [TutorialEngine] with the same [persistenceId] will
   /// resume from the saved step index without requiring any extra setup.
   final String? persistenceId;
+
+  /// Optional set of step indices at which progress is persisted.
+  ///
+  /// When null (the default), progress is saved on every step change. When
+  /// non-null, progress is saved only when the current step index is in this
+  /// set. Use an empty set to disable saving (e.g. never persist). Valid
+  /// configurations: null or all indices to save at every step; a non-empty
+  /// set to save only at checkpoint steps; an empty set to never save.
+  final Set<int>? checkpointSteps;
 
   /// Optional callback invoked when the tutorial ends.
   ///
@@ -1538,6 +1548,10 @@ class _TutorialEngineState extends State<TutorialEngine> {
   void _persistProgressIfNeeded() {
     final String? id = widget.persistenceId;
     if (id == null || _controller.isFinished) {
+      return;
+    }
+    final checkpoints = widget.checkpointSteps;
+    if (checkpoints != null && !checkpoints.contains(_controller.currentIndex)) {
       return;
     }
     unawaited(TutorialProgressStorage.writeIndex(id, _controller.currentIndex));

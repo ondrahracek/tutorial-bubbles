@@ -320,7 +320,7 @@
       "Completing a non-checkpoint step does not advance the persisted position",
       "Saving at every step, saving only at checkpoints, and never saving are all valid configurations"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "API",

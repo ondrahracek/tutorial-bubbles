@@ -36,3 +36,5 @@
 2026-03-02: Added TutorialCompletionReason enum and TutorialEngine.onComplete callback; controller exposes lastCompletionReason (completed/skipped/finished); widget tests verify onComplete is called with correct reason for advance-through-last, skip-on-last, and finish(); PRD "Controller allows registering a callback when the tutorial completes" set to passes; flutter analyze/test and example analyze all passing.
 
 2026-03-02: Added TutorialEngineController.goBack() to navigate to the previous step (no-op on first step or when finished); unit and widget tests; PRD "Controller can navigate to the previous step" set to passes; flutter analyze/test and example analyze all passing.
+
+2026-03-02: Added TutorialEngine.checkpointSteps (Set<int>?): null = save every step, non-empty set = save only at those indices, empty set = never save; _persistProgressIfNeeded respects checkpoints; widget tests for checkpoints {2,5} and empty set; PRD "Progress is only saved at configurable checkpoint steps" set to passes; flutter analyze/test and example analyze all passing.

@@ -2056,6 +2056,132 @@ void main() {
 
     expect(resetController.currentIndex, 0);
   });
+
+  testWidgets(
+      'Progress is only saved at configurable checkpoint steps',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+
+    final steps = List.generate(
+      6,
+      (i) => TutorialStep(
+        targetKey: key,
+        bubbleBuilder: (context) =>
+            TutorialTextBubble(text: 'Step ${i + 1}'),
+      ),
+    );
+
+    const tutorialId = 'checkpoint-tutorial';
+
+    final controller = TutorialEngineController(steps: steps);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistenceId: tutorialId,
+          checkpointSteps: const {2, 5},
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    expect(controller.currentIndex, 0);
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 1);
+    expect(await TutorialProgressStorage.readIndex(tutorialId), isNull);
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 2);
+    expect(await TutorialProgressStorage.readIndex(tutorialId), 2);
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 3);
+    expect(await TutorialProgressStorage.readIndex(tutorialId), 2);
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 4);
+    expect(await TutorialProgressStorage.readIndex(tutorialId), 2);
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 5);
+    expect(await TutorialProgressStorage.readIndex(tutorialId), 5);
+
+    await TutorialProgressStorage.clear(tutorialId);
+  });
+
+  testWidgets(
+      'With checkpointSteps empty, progress is never saved on step change',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key,
+        bubbleBuilder: (context) =>
+            const TutorialTextBubble(text: 'Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key,
+        bubbleBuilder: (context) =>
+            const TutorialTextBubble(text: 'Step 2'),
+      ),
+    ];
+
+    const tutorialId = 'no-checkpoint-tutorial';
+
+    final controller = TutorialEngineController(steps: steps);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistenceId: tutorialId,
+          checkpointSteps: const {},
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(controller.currentIndex, 1);
+    expect(await TutorialProgressStorage.readIndex(tutorialId), isNull);
+
+    await TutorialProgressStorage.clear(tutorialId);
+  });
 }
 
 class _TargetOverlayDemo extends StatefulWidget {
