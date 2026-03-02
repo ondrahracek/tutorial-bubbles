@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -180,6 +179,31 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubble can display an optional border with a darker-than-background default color',
+      (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          borderWidth: 2,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.border, isNotNull);
+    final Border border = decoration.border! as Border;
+    expect(border.top.width, 2);
+    // Default background is 0xFF303030; the darker border color should be
+    // a slightly darker gray.
+    expect(border.top.color, const Color(0xFF292929));
+  });
+
+  testWidgets(
       'TutorialBubble uses a soft rounded default corner radius when none is provided',
       (tester) async {
     await tester.pumpWidget(
@@ -214,6 +238,32 @@ void main() {
     final decoration = decoratedBox.decoration as BoxDecoration;
 
     expect(decoration.borderRadius, BorderRadius.circular(24));
+  });
+
+  testWidgets('TutorialBubble border color and width are configurable',
+      (tester) async {
+    const borderColor = Color(0xFFFF0000);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          backgroundColor: Color(0xFF0000FF),
+          borderColor: borderColor,
+          borderWidth: 3,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.border, isNotNull);
+    final Border border = decoration.border! as Border;
+    expect(border.top.color, borderColor);
+    expect(border.top.width, 3);
   });
 
   testWidgets('TutorialBubble uses the provided background color',

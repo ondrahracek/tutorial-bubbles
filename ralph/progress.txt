@@ -41,3 +41,4 @@
 2026-03-02: Updated TutorialBubbleOverlay overlay cutout to match the target bounds exactly with a painter test and ensured flutter analyze/test in root and analyze in example all pass.
 2026-03-02: Made TutorialBubble corner radius configurable via a cornerRadius parameter with tests and marked the PRD item "Bubble corner radius is configurable" as passing; flutter analyze/test in root and analyze in example all passing to be confirmed.
 2026-03-02: Added a configurable maxBubbleWidthFraction to TutorialBubbleOverlay so bubbles default to a non-full-screen width, with widget tests covering default and custom fractions; flutter analyze/test in root and analyze in example all passing.
+2026-03-02: Added an optional configurable border to TutorialBubble with a default darker-than-background color plus widget tests, and marked the PRD item "Bubble has a configurable border" as passing; flutter analyze/test in root and analyze in example all passing.

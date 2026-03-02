@@ -36,6 +36,8 @@ class TutorialBubble extends StatelessWidget {
     required this.child,
     this.backgroundColor,
     this.backgroundGradient,
+    this.borderColor,
+    this.borderWidth = 0,
     this.haloEnabled = false,
     this.haloColor,
     this.haloBlurRadius = 16,
@@ -48,6 +50,14 @@ class TutorialBubble extends StatelessWidget {
   final Widget child;
   final Color? backgroundColor;
   final Gradient? backgroundGradient;
+  final Color? borderColor;
+
+  /// Width of the optional border around the bubble.
+  ///
+  /// A value of 0 (the default) disables the border. When the border is
+  /// visible, its default color is slightly darker than the bubble background,
+  /// and callers can override the color via [borderColor].
+  final double borderWidth;
 
   /// Whether to draw a glow/halo around the bubble.
   ///
@@ -90,6 +100,8 @@ class TutorialBubble extends StatelessWidget {
     return _TutorialBubbleBody(
       backgroundColor: backgroundColor,
       backgroundGradient: backgroundGradient,
+      borderColor: borderColor,
+      borderWidth: borderWidth,
       haloEnabled: haloEnabled,
       haloColor: haloColor,
       haloBlurRadius: haloBlurRadius,
@@ -107,6 +119,8 @@ class _TutorialBubbleBody extends StatefulWidget {
     required this.child,
     required this.backgroundColor,
     required this.backgroundGradient,
+    required this.borderColor,
+    required this.borderWidth,
     required this.haloEnabled,
     required this.haloColor,
     required this.haloBlurRadius,
@@ -119,6 +133,8 @@ class _TutorialBubbleBody extends StatefulWidget {
   final Widget child;
   final Color? backgroundColor;
   final Gradient? backgroundGradient;
+  final Color? borderColor;
+  final double borderWidth;
   final bool haloEnabled;
   final Color? haloColor;
   final double haloBlurRadius;
@@ -199,10 +215,24 @@ class _TutorialBubbleBodyState extends State<_TutorialBubbleBody>
               ]
             : null;
 
+    Border? border;
+    if (widget.borderWidth > 0) {
+      final Color base = widget.backgroundGradient == null
+          ? defaultBackground
+          : TutorialBubble._defaultBackgroundColor;
+      final Color effectiveBorderColor =
+          widget.borderColor ?? _darkerColor(base);
+      border = Border.all(
+        color: effectiveBorderColor,
+        width: widget.borderWidth,
+      );
+    }
+
     final decoration = BoxDecoration(
       color: widget.backgroundGradient == null ? defaultBackground : null,
       gradient: widget.backgroundGradient,
       borderRadius: BorderRadius.circular(widget.cornerRadius),
+      border: border,
       boxShadow: boxShadow,
     );
 
@@ -235,6 +265,19 @@ class _TutorialBubbleBodyState extends State<_TutorialBubbleBody>
     }
 
     return result;
+  }
+
+  Color _darkerColor(Color color) {
+    const double factor = 0.85;
+    int scale(double channel) =>
+        ((channel * factor) * 255.0).round() & 0xff;
+    final int alpha = (color.a * 255.0).round() & 0xff;
+    return Color.fromARGB(
+      alpha,
+      scale(color.r),
+      scale(color.g),
+      scale(color.b),
+    );
   }
 }
 

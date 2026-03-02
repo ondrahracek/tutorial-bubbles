@@ -429,7 +429,7 @@
       "Default border color is slightly darker than the bubble background",
       "Border color and width are configurable"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
