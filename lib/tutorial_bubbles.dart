@@ -584,57 +584,72 @@ class _TutorialArrowPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
+    // Arrow runs from the bubble side toward the target; the arrowhead tip
+    // lands exactly on the target's border without overlapping its interior.
+    final Offset tip = _targetEdgePoint(side);
+    final Offset fromBubble = _bubbleSidePoint(side, tip);
 
-    // Arrow runs from bubble side toward the target; tip lands at target edge.
-    final Offset toTarget = _targetEdgePoint(side);
-    final Offset fromBubble = _bubbleSidePoint(side, toTarget);
+    final Offset fullLine = tip - fromBubble;
+    final double fullDist = fullLine.distance;
+    if (fullDist == 0) {
+      return;
+    }
 
-    final Path path = Path();
-    path.moveTo(fromBubble.dx, fromBubble.dy);
+    const double arrowHeadLength = 6;
+
+    // Keep the arrow body and head entirely outside the target by ending the
+    // curved body just before the tip on the target border.
+    final double clampedHeadLength =
+        fullDist > arrowHeadLength ? arrowHeadLength : fullDist * 0.5;
+    final Offset direction = fullLine / fullDist;
+    final Offset bodyEnd = tip - direction * clampedHeadLength;
+
+    final Path path = Path()..moveTo(fromBubble.dx, fromBubble.dy);
 
     // Smooth curved path: quadratic Bezier with control point offset
     // perpendicular to the line so the curve bulges naturally.
     final Offset mid = Offset(
-      (fromBubble.dx + toTarget.dx) / 2,
-      (fromBubble.dy + toTarget.dy) / 2,
+      (fromBubble.dx + bodyEnd.dx) / 2,
+      (fromBubble.dy + bodyEnd.dy) / 2,
     );
-    final Offset line = toTarget - fromBubble;
-    final double dist = line.distance;
-    if (dist > 0) {
-      final Offset perp = Offset(-line.dy / dist, line.dx / dist);
+    final Offset bodyVector = bodyEnd - fromBubble;
+    final double bodyDist = bodyVector.distance;
+    if (bodyDist > 0) {
+      final Offset perp =
+          Offset(-bodyVector.dy / bodyDist, bodyVector.dx / bodyDist);
       // Bulge amount: ~15% of segment length for a visible curve.
       const double bulgeFraction = 0.15;
-      final Offset control = mid + perp * (dist * bulgeFraction);
+      final Offset control = mid + perp * (bodyDist * bulgeFraction);
       path.quadraticBezierTo(
         control.dx,
         control.dy,
-        toTarget.dx,
-        toTarget.dy,
+        bodyEnd.dx,
+        bodyEnd.dy,
       );
     } else {
-      path.lineTo(toTarget.dx, toTarget.dy);
+      path.lineTo(bodyEnd.dx, bodyEnd.dy);
     }
 
     canvas.drawPath(path, paint);
 
-    // Arrowhead at the target end.
-    if (dist > 0) {
-      const double arrowHeadSize = 6;
-      final Offset normalized = line / dist;
-      final Offset perp = Offset(-normalized.dy, normalized.dx);
-      final Offset left = toTarget +
-          normalized * arrowHeadSize +
-          perp * (arrowHeadSize / 2);
-      final Offset right = toTarget +
-          normalized * arrowHeadSize -
-          perp * (arrowHeadSize / 2);
-      final Path head = Path()
-        ..moveTo(toTarget.dx, toTarget.dy)
-        ..lineTo(left.dx, left.dy)
-        ..moveTo(toTarget.dx, toTarget.dy)
-        ..lineTo(right.dx, right.dy);
-      canvas.drawPath(head, paint);
-    }
+    // Arrowhead that ends exactly at the target border tip.
+    final Offset perp = Offset(-direction.dy, direction.dx);
+    final Path head = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(
+        tip.dx - direction.dx * clampedHeadLength +
+            perp.dx * (clampedHeadLength / 2),
+        tip.dy - direction.dy * clampedHeadLength +
+            perp.dy * (clampedHeadLength / 2),
+      )
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(
+        tip.dx - direction.dx * clampedHeadLength -
+            perp.dx * (clampedHeadLength / 2),
+        tip.dy - direction.dy * clampedHeadLength -
+            perp.dy * (clampedHeadLength / 2),
+      );
+    canvas.drawPath(head, paint);
   }
 
   /// Point on the target rect edge where the arrow tip lands (facing the bubble).
