@@ -21,22 +21,59 @@ class TutorialBubble extends StatelessWidget {
     required this.child,
     this.backgroundColor,
     this.backgroundGradient,
+    this.haloEnabled = false,
+    this.haloColor,
+    this.haloBlurRadius = 16,
+    this.haloSpreadRadius = 2,
   });
 
   final Widget child;
   final Color? backgroundColor;
   final Gradient? backgroundGradient;
 
+  /// Whether to draw a glow/halo around the bubble.
+  ///
+  /// When enabled, a soft shadow is rendered around the bubble using
+  /// [haloColor], [haloBlurRadius], and [haloSpreadRadius].
+  final bool haloEnabled;
+
+  /// Optional color for the halo glow.
+  ///
+  /// When null, a color derived from the bubble background is used.
+  final Color? haloColor;
+
+  /// Blur radius for the halo glow.
+  final double haloBlurRadius;
+
+  /// Spread radius for the halo glow.
+  final double haloSpreadRadius;
+
   static const Color _defaultBackgroundColor = Color(0xFF303030);
 
   @override
   Widget build(BuildContext context) {
+    final Color defaultBackground =
+        backgroundColor ?? _defaultBackgroundColor;
+
+    final Color haloFallbackColor =
+        backgroundGradient == null ? defaultBackground : _defaultBackgroundColor;
+
+    final List<BoxShadow>? boxShadow =
+        (haloEnabled || haloColor != null)
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: haloColor ?? haloFallbackColor,
+                  blurRadius: haloBlurRadius,
+                  spreadRadius: haloSpreadRadius,
+                ),
+              ]
+            : null;
+
     final decoration = BoxDecoration(
-      color: backgroundGradient == null
-          ? (backgroundColor ?? _defaultBackgroundColor)
-          : null,
+      color: backgroundGradient == null ? defaultBackground : null,
       gradient: backgroundGradient,
       borderRadius: BorderRadius.circular(12),
+      boxShadow: boxShadow,
     );
 
     return DecoratedBox(
@@ -141,6 +178,10 @@ class TutorialBubbleOverlay extends StatelessWidget {
     this.backgroundColor,
     this.backgroundGradient,
     this.padding = const EdgeInsets.all(8),
+    this.bubbleHaloEnabled = false,
+    this.bubbleHaloColor,
+    this.bubbleHaloBlurRadius = 16,
+    this.bubbleHaloSpreadRadius = 2,
   });
 
   /// Rectangle describing the target widget in this overlay's
@@ -168,6 +209,18 @@ class TutorialBubbleOverlay extends StatelessWidget {
   /// Padding between the bubble and the [targetRect].
   final EdgeInsets padding;
 
+  /// Whether the bubble rendered by this overlay should draw a halo glow.
+  final bool bubbleHaloEnabled;
+
+  /// Optional color for the bubble halo glow.
+  final Color? bubbleHaloColor;
+
+  /// Blur radius for the bubble halo glow.
+  final double bubbleHaloBlurRadius;
+
+  /// Spread radius for the bubble halo glow.
+  final double bubbleHaloSpreadRadius;
+
   /// Content inside the bubble.
   final Widget child;
 
@@ -187,6 +240,10 @@ class TutorialBubbleOverlay extends StatelessWidget {
         child: TutorialBubble(
           backgroundColor: backgroundColor,
           backgroundGradient: backgroundGradient,
+          haloEnabled: bubbleHaloEnabled,
+          haloColor: bubbleHaloColor,
+          haloBlurRadius: bubbleHaloBlurRadius,
+          haloSpreadRadius: bubbleHaloSpreadRadius,
           child: child,
         ),
       ),

@@ -161,6 +161,85 @@ void main() {
     expect(decoration.color, isNull);
   });
 
+  testWidgets('TutorialBubble does not apply a halo by default',
+      (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.boxShadow, isNull);
+  });
+
+  testWidgets(
+      'TutorialBubble applies a configurable halo when haloEnabled is true',
+      (tester) async {
+    const haloColor = Color(0xFFFFAA00);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          haloEnabled: true,
+          haloColor: haloColor,
+          haloBlurRadius: 24,
+          haloSpreadRadius: 4,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.boxShadow, isNotNull);
+    expect(decoration.boxShadow, isNotEmpty);
+
+    final shadow = decoration.boxShadow!.first;
+    expect(shadow.color, haloColor);
+    expect(shadow.blurRadius, 24);
+    expect(shadow.spreadRadius, 4);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay can enable a halo on the bubble it renders',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+    const haloColor = Color(0xFF00FFAA);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            bubbleHaloEnabled: true,
+            bubbleHaloColor: haloColor,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.boxShadow, isNotNull);
+    expect(decoration.boxShadow, isNotEmpty);
+    expect(decoration.boxShadow!.first.color, haloColor);
+  });
+
   testWidgets(
       'TutorialBubble prefers backgroundGradient over backgroundColor when both are provided',
       (tester) async {

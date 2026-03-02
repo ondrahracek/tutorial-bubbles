@@ -84,6 +84,8 @@ class _TutorialBubbleDemoPageState extends State<_TutorialBubbleDemoPage> {
                   child: TutorialBubbleOverlay(
                     targetRect: _targetRect!,
                     preferredSide: TutorialBubbleSide.top,
+                    bubbleHaloEnabled: true,
+                    bubbleHaloColor: const Color(0x8042A5F5),
                     backgroundGradient: const LinearGradient(
                       colors: <Color>[
                         Color(0xFF42A5F5),

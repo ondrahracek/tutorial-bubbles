@@ -88,7 +88,7 @@
       "The halo color and spread can be adjusted",
       "Disabling the halo removes it entirely with no residual visual effect"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
