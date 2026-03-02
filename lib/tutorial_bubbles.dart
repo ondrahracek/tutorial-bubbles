@@ -137,6 +137,7 @@ class TutorialBubbleOverlay extends StatelessWidget {
     required this.targetRect,
     required this.child,
     this.preferredSide = TutorialBubbleSide.automatic,
+    this.overlayColor = const Color(0xB3000000),
     this.backgroundColor,
     this.backgroundGradient,
     this.padding = const EdgeInsets.all(8),
@@ -148,6 +149,13 @@ class TutorialBubbleOverlay extends StatelessWidget {
 
   /// Which side of the [targetRect] the bubble prefers to appear on.
   final TutorialBubbleSide preferredSide;
+
+  /// Color of the dark overlay that dims everything except the bubble
+  /// and target.
+  ///
+  /// Use an opaque or semi-transparent color to control how dark the
+  /// background appears while this overlay is active.
+  final Color overlayColor;
 
   /// Optional override for the bubble background color.
   final Color? backgroundColor;
@@ -165,16 +173,22 @@ class TutorialBubbleOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomSingleChildLayout(
-      delegate: _TutorialBubblePositionDelegate(
+    return CustomPaint(
+      painter: _TutorialOverlayPainter(
         targetRect: targetRect,
-        preferredSide: preferredSide,
-        padding: padding,
+        overlayColor: overlayColor,
       ),
-      child: TutorialBubble(
-        backgroundColor: backgroundColor,
-        backgroundGradient: backgroundGradient,
-        child: child,
+      child: CustomSingleChildLayout(
+        delegate: _TutorialBubblePositionDelegate(
+          targetRect: targetRect,
+          preferredSide: preferredSide,
+          padding: padding,
+        ),
+        child: TutorialBubble(
+          backgroundColor: backgroundColor,
+          backgroundGradient: backgroundGradient,
+          child: child,
+        ),
       ),
     );
   }
@@ -265,5 +279,44 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
     return oldDelegate.targetRect != targetRect ||
         oldDelegate.preferredSide != preferredSide ||
         oldDelegate.padding != padding;
+  }
+}
+
+class _TutorialOverlayPainter extends CustomPainter {
+  _TutorialOverlayPainter({
+    required this.targetRect,
+    required this.overlayColor,
+  });
+
+  final Rect targetRect;
+  final Color overlayColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (overlayColor.a == 0) {
+      return;
+    }
+
+    final overlayRect = Offset.zero & size;
+
+    canvas.saveLayer(overlayRect, Paint());
+
+    final overlayPaint = Paint()..color = overlayColor;
+    canvas.drawRect(overlayRect, overlayPaint);
+
+    final clearPaint = Paint()..blendMode = BlendMode.clear;
+    final highlightRect = RRect.fromRectAndRadius(
+      targetRect.inflate(8),
+      const Radius.circular(12),
+    );
+    canvas.drawRRect(highlightRect, clearPaint);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_TutorialOverlayPainter oldDelegate) {
+    return oldDelegate.targetRect != targetRect ||
+        oldDelegate.overlayColor != overlayColor;
   }
 }

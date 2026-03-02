@@ -159,7 +159,7 @@
       "The bubble and arrow are not dimmed",
       "The darkness level of the overlay is configurable"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

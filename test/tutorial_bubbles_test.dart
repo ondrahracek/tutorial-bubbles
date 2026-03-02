@@ -230,6 +230,32 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay draws a dark overlay that can be customized',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            overlayColor: Color(0x99000000),
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaintFinder = find.byType(CustomPaint);
+    expect(customPaintFinder, findsOneWidget);
+
+    final customPaint = tester.widget<CustomPaint>(customPaintFinder);
+    expect(customPaint.painter, isNotNull);
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay automatic side chooses the side with most space',
       (tester) async {
     const targetRectLocal = Rect.fromLTWH(80, 40, 40, 40);
