@@ -686,6 +686,61 @@ void main() {
       throwsA(isA<AssertionError>()),
     );
   });
+
+  test(
+      'TutorialEngineController executes steps in order and advances when advance is called',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+    final key3 = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+      TutorialStep(
+        targetKey: key3,
+        bubbleBuilder: (context) => const Text('Step 3'),
+      ),
+    ];
+
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.currentIndex, 0);
+    expect(controller.currentStep.targetKey, key1);
+    expect(controller.isLastStep, isFalse);
+    expect(controller.isFinished, isFalse);
+
+    final firstAdvanceChanged = controller.advance();
+    expect(firstAdvanceChanged, isTrue);
+    expect(controller.currentIndex, 1);
+    expect(controller.currentStep.targetKey, key2);
+    expect(controller.isLastStep, isFalse);
+    expect(controller.isFinished, isFalse);
+
+    final secondAdvanceChanged = controller.advance();
+    expect(secondAdvanceChanged, isTrue);
+    expect(controller.currentIndex, 2);
+    expect(controller.currentStep.targetKey, key3);
+    expect(controller.isLastStep, isTrue);
+    expect(controller.isFinished, isFalse);
+
+    final thirdAdvanceChanged = controller.advance();
+    expect(thirdAdvanceChanged, isFalse);
+    expect(controller.currentIndex, 2);
+    expect(controller.isLastStep, isTrue);
+    expect(controller.isFinished, isTrue);
+
+    final fourthAdvanceChanged = controller.advance();
+    expect(fourthAdvanceChanged, isFalse);
+    expect(controller.currentIndex, 2);
+    expect(controller.isFinished, isTrue);
+  });
 }
 
 class _TargetOverlayDemo extends StatefulWidget {

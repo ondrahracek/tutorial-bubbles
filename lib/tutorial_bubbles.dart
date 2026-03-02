@@ -729,5 +729,40 @@ class TutorialEngineController {
 
   /// Ordered, immutable list of steps managed by this controller.
   List<TutorialStep> get steps => _steps;
+
+  int _currentIndex = 0;
+
+  /// Index of the currently active step in [steps].
+  int get currentIndex => _currentIndex;
+
+  /// The currently active [TutorialStep].
+  TutorialStep get currentStep => _steps[_currentIndex];
+
+  /// Whether the current step is the last step in the tutorial.
+  bool get isLastStep => _currentIndex == _steps.length - 1;
+
+  bool _isFinished = false;
+
+  /// Whether the tutorial has finished executing all steps.
+  bool get isFinished => _isFinished;
+
+  /// Advances to the next step when the current step has completed.
+  ///
+  /// Returns true when the active step index changes. When the tutorial
+  /// has already run through all steps, this returns false and leaves the
+  /// controller in a finished state.
+  bool advance() {
+    if (_isFinished) {
+      return false;
+    }
+
+    if (_currentIndex < _steps.length - 1) {
+      _currentIndex += 1;
+      return true;
+    }
+
+    _isFinished = true;
+    return false;
+  }
 }
 

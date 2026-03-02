@@ -260,7 +260,7 @@
       "Each step shows its bubble on the correct target",
       "Steps run in the order they were defined"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "tutorial-engine",
