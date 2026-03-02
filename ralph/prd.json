@@ -362,5 +362,93 @@
       "Going back from the first step either does nothing or is undefined and documented"
     ],
     "passes": true
+  },
+  {
+    "category": "UI",
+    "description": "Cutout in the dark overlay matches the target widget bounds exactly",
+    "steps": [
+      "The hole in the overlay has no extra padding around the target",
+      "The cutout shape matches the target widget's layout bounds precisely"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Target halo appears over the dark overlay",
+    "steps": [
+      "When the target halo is enabled, it is drawn on top of the dimmed background",
+      "The halo appears as if the full screen were dimmed and the halo is painted over it",
+      "No extra padding or oversizing around the target"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Arrow stroke width is configurable",
+    "steps": [
+      "A parameter controls the arrow stroke width",
+      "The default width makes the arrow clearly visible and noticeable",
+      "Callers can increase or decrease the arrow thickness"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble has configurable maximum width and does not span full screen by default",
+    "steps": [
+      "The bubble width is configurable with a sensible default (e.g. around half the screen width)",
+      "The bubble does not stretch edge-to-edge across the screen by default",
+      "Bubble height adjusts automatically to fit its content"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Text inside the bubble renders without decorative underlines by default",
+    "steps": [
+      "No yellow or double underline appears on the bubble text",
+      "Text displays cleanly without rich-text default underlines"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble corner radius is configurable",
+    "steps": [
+      "A parameter controls the bubble corner roundness",
+      "The default gives the bubble a soft, rounded, bubble-like appearance",
+      "Callers can adjust the corner radius"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Bubble has a configurable border",
+    "steps": [
+      "The bubble can display a border around its edges",
+      "Default border color is slightly darker than the bubble background",
+      "Border color and width are configurable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Distance between bubble and target is configurable",
+    "steps": [
+      "A parameter controls how far the bubble sits from the target",
+      "The default places the bubble farther from the target (more spacing)",
+      "Callers can adjust the gap between bubble and target"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UI",
+    "description": "Configured color or gradient fills the bubble interior",
+    "steps": [
+      "The bubble's visible fill displays the configured background color or gradient",
+      "The color or gradient is applied to the bubble's interior surface",
+      "The color is not rendered only in a halo or area around the bubble"
+    ],
+    "passes": false
   }
 ]
