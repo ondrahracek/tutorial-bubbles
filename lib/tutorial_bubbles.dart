@@ -305,6 +305,7 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.bubbleHaloColor,
     this.bubbleHaloBlurRadius = 16,
     this.bubbleHaloSpreadRadius = 2,
+    this.blockOutsideTarget = true,
     this.arrowEnabled = true,
     this.arrowColor = const Color(0xFFFFFFFF),
     this.arrowStrokeWidth = 2,
@@ -346,6 +347,13 @@ class TutorialBubbleOverlay extends StatefulWidget {
 
   /// Spread radius for the bubble halo glow.
   final double bubbleHaloSpreadRadius;
+
+  /// Whether interactions outside the highlighted [targetRect] should be
+  /// blocked while this overlay is active.
+  ///
+  /// When true (the default), taps and gestures anywhere outside the target
+  /// will be absorbed so that only the highlighted target remains interactive.
+  final bool blockOutsideTarget;
 
   /// Whether to render an arrow connecting the bubble toward the target.
   ///
@@ -393,6 +401,10 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          _TutorialInteractionBlocker(
+            targetRect: widget.targetRect,
+            enabled: widget.blockOutsideTarget,
+          ),
           CustomSingleChildLayout(
             delegate: _TutorialBubblePositionDelegate(
               targetRect: widget.targetRect,
@@ -691,6 +703,91 @@ class _TutorialArrowPainter extends CustomPainter {
         oldDelegate.side != side ||
         oldDelegate.color != color ||
         oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
+class _TutorialInteractionBlocker extends StatelessWidget {
+  const _TutorialInteractionBlocker({
+    required this.targetRect,
+    required this.enabled,
+  });
+
+  final Rect targetRect;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) {
+      return const SizedBox.shrink();
+    }
+
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final Size size = constraints.biggest;
+        if (size.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final double left = targetRect.left.clamp(0.0, size.width);
+        final double right = targetRect.right.clamp(0.0, size.width);
+        final double top = targetRect.top.clamp(0.0, size.height);
+        final double bottom = targetRect.bottom.clamp(0.0, size.height);
+
+        final Rect clamped = Rect.fromLTRB(left, top, right, bottom);
+
+        if (clamped.isEmpty) {
+          return const _AbsorbingRegion();
+        }
+
+        return Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              height: clamped.top,
+              child: const _AbsorbingRegion(),
+            ),
+            Positioned(
+              left: 0,
+              top: clamped.bottom,
+              right: 0,
+              bottom: 0,
+              child: const _AbsorbingRegion(),
+            ),
+            Positioned(
+              left: 0,
+              top: clamped.top,
+              width: clamped.left,
+              height: clamped.height,
+              child: const _AbsorbingRegion(),
+            ),
+            Positioned(
+              left: clamped.right,
+              top: clamped.top,
+              right: 0,
+              height: clamped.height,
+              child: const _AbsorbingRegion(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AbsorbingRegion extends StatelessWidget {
+  const _AbsorbingRegion();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AbsorbPointer(
+      child: SizedBox.expand(
+        child: ColoredBox(
+          color: Color(0x00000000),
+        ),
+      ),
+    );
   }
 }
 

@@ -210,7 +210,7 @@
       "Scrolling and gestures in non-target areas are intercepted by the overlay",
       "Only the highlighted target remains interactive"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

@@ -17,3 +17,4 @@
 2026-03-02: Adjusted arrow geometry so the arrowhead tip lands exactly at the target border without overlapping the target interior; PRD "Arrow tip lands precisely at the target's border without overlapping it" marked complete; flutter analyze/test in root and analyze in example all passing.
 
 2026-03-02: Extended TutorialEngineController with currentIndex/currentStep, isLastStep/isFinished, and an advance() API plus tests so engine steps run in order when completion is signaled; flutter analyze/test in root and example analyze all passing.
+2026-03-02: Updated TutorialBubbleOverlay to block interactions outside the highlighted target using an interaction blocker layer and added a widget test to verify outside taps are absorbed; flutter analyze/test in root and analyze in example all passing.

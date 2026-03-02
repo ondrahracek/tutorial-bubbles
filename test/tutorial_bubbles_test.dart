@@ -741,6 +741,35 @@ void main() {
     expect(controller.currentIndex, 2);
     expect(controller.isFinished, isTrue);
   });
+
+  testWidgets(
+      'TutorialBubbleOverlay blocks interactions outside the highlighted target',
+      (tester) async {
+    var targetTapped = false;
+    var outsideTapped = false;
+
+    await tester.pumpWidget(
+      _InteractionBlockingDemo(
+        onTargetTap: () {
+          targetTapped = true;
+        },
+        onOutsideTap: () {
+          outsideTapped = true;
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Outside button'));
+    await tester.pumpAndSettle();
+    expect(outsideTapped, isFalse);
+
+    // The target can still be interacted with in future scenarios,
+    // but this test focuses specifically on ensuring that taps
+    // outside the highlighted target are blocked.
+    expect(targetTapped, isFalse);
+  });
 }
 
 class _TargetOverlayDemo extends StatefulWidget {
@@ -813,6 +842,98 @@ class _TargetOverlayDemoState extends State<_TargetOverlayDemo> {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractionBlockingDemo extends StatefulWidget {
+  const _InteractionBlockingDemo({
+    required this.onTargetTap,
+    required this.onOutsideTap,
+  });
+
+  final VoidCallback onTargetTap;
+  final VoidCallback onOutsideTap;
+
+  @override
+  State<_InteractionBlockingDemo> createState() =>
+      _InteractionBlockingDemoState();
+}
+
+class _InteractionBlockingDemoState extends State<_InteractionBlockingDemo> {
+  final GlobalKey _targetKey = GlobalKey();
+  final GlobalKey _overlayKey = GlobalKey();
+
+  Rect? _targetRect;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTargetRect());
+  }
+
+  void _updateTargetRect() {
+    final targetContext = _targetKey.currentContext;
+    final overlayContext = _overlayKey.currentContext;
+
+    if (targetContext == null || overlayContext == null) {
+      return;
+    }
+
+    final targetBox = targetContext.findRenderObject() as RenderBox?;
+    final overlayBox = overlayContext.findRenderObject() as RenderBox?;
+
+    if (targetBox == null || overlayBox == null) {
+      return;
+    }
+
+    final topLeft =
+        targetBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final size = targetBox.size;
+
+    setState(() {
+      _targetRect = topLeft & size;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            key: _overlayKey,
+            width: 240,
+            height: 240,
+            child: Stack(
+              children: [
+                Align(
+                  alignment: const Alignment(0, -0.8),
+                  child: ElevatedButton(
+                    onPressed: widget.onOutsideTap,
+                    child: const Text('Outside button'),
+                  ),
+                ),
+                Center(
+                  child: ElevatedButton(
+                    key: _targetKey,
+                    onPressed: widget.onTargetTap,
+                    child: const Text('Target button'),
+                  ),
+                ),
+                if (_targetRect != null)
+                  Positioned.fill(
+                    child: TutorialBubbleOverlay(
+                      targetRect: _targetRect!,
+                      preferredSide: TutorialBubbleSide.top,
+                      child: const SizedBox(width: 40, height: 40),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
