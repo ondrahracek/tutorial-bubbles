@@ -78,7 +78,7 @@
       "Text color, size, font family, and weight can each be changed independently",
       "Passing a complete custom text style overrides all individual text settings at once"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",

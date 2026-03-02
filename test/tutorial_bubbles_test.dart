@@ -18,6 +18,82 @@ void main() {
     expect(find.byKey(childKey), findsOneWidget);
   });
 
+  testWidgets('TutorialTextBubble renders the provided text', (tester) async {
+    const text = 'Hello bubble';
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialTextBubble(
+          text: text,
+        ),
+      ),
+    );
+
+    expect(find.text(text), findsOneWidget);
+  });
+
+  testWidgets(
+      'TutorialTextBubble allows configuring individual text style properties',
+      (tester) async {
+    const text = 'Styled bubble';
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialTextBubble(
+          text: text,
+          textColor: Color(0xFFFF00FF),
+          fontSize: 18,
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+
+    final textWidget = tester.widget<Text>(find.text(text));
+    final style = textWidget.style!;
+
+    expect(style.color, const Color(0xFFFF00FF));
+    expect(style.fontSize, 18);
+    expect(style.fontFamily, 'Roboto');
+    expect(style.fontWeight, FontWeight.w700);
+  });
+
+  testWidgets(
+      'TutorialTextBubble prefers complete textStyle over individual properties',
+      (tester) async {
+    const text = 'Override style';
+    const overrideStyle = TextStyle(
+      color: Color(0xFF00FFFF),
+      fontSize: 20,
+      fontFamily: 'Courier',
+      fontWeight: FontWeight.w300,
+    );
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialTextBubble(
+          text: text,
+          textColor: Color(0xFFFF00FF),
+          fontSize: 18,
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w700,
+          textStyle: overrideStyle,
+        ),
+      ),
+    );
+
+    final textWidget = tester.widget<Text>(find.text(text));
+    final style = textWidget.style!;
+
+    expect(style.color, overrideStyle.color);
+    expect(style.fontSize, overrideStyle.fontSize);
+    expect(style.fontFamily, overrideStyle.fontFamily);
+    expect(style.fontWeight, overrideStyle.fontWeight);
+  });
+
   testWidgets(
       'TutorialBubble uses a sensible default background color when none is provided',
       (tester) async {

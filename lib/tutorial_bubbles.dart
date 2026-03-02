@@ -52,6 +52,80 @@ class TutorialBubble extends StatelessWidget {
   }
 }
 
+/// A convenience bubble widget for text content with configurable styling.
+///
+/// This composes [TutorialBubble] and [Text] so callers can configure text
+/// appearance without building their own child tree.
+class TutorialTextBubble extends StatelessWidget {
+  const TutorialTextBubble({
+    super.key,
+    required this.text,
+    this.textColor,
+    this.fontSize,
+    this.fontFamily,
+    this.fontWeight,
+    this.textStyle,
+    this.backgroundColor,
+    this.backgroundGradient,
+  });
+
+  /// The text content shown inside the bubble.
+  final String text;
+
+  /// Optional text color override.
+  final Color? textColor;
+
+  /// Optional font size override.
+  final double? fontSize;
+
+  /// Optional font family override.
+  final String? fontFamily;
+
+  /// Optional font weight override.
+  final FontWeight? fontWeight;
+
+  /// Optional complete [TextStyle] override.
+  ///
+  /// When provided, this style takes precedence over the individual text
+  /// properties such as [textColor], [fontSize], [fontFamily], and
+  /// [fontWeight].
+  final TextStyle? textStyle;
+
+  /// Optional override for the bubble background color.
+  final Color? backgroundColor;
+
+  /// Optional override for the bubble background gradient.
+  ///
+  /// When provided, this takes precedence over [backgroundColor].
+  final Gradient? backgroundGradient;
+
+  @override
+  Widget build(BuildContext context) {
+    final defaultStyle = DefaultTextStyle.of(context).style;
+
+    TextStyle effectiveStyle;
+    if (textStyle != null) {
+      effectiveStyle = defaultStyle.merge(textStyle);
+    } else {
+      effectiveStyle = defaultStyle.copyWith(
+        color: textColor,
+        fontSize: fontSize,
+        fontFamily: fontFamily,
+        fontWeight: fontWeight,
+      );
+    }
+
+    return TutorialBubble(
+      backgroundColor: backgroundColor,
+      backgroundGradient: backgroundGradient,
+      child: Text(
+        text,
+        style: effectiveStyle,
+      ),
+    );
+  }
+}
+
 /// Positions a [TutorialBubble] relative to a given [targetRect]
 /// within the available layout bounds.
 ///

@@ -6,3 +6,4 @@
 2026-03-02: Ensured TutorialBubbleOverlay keeps bubbles fully on-screen near edges with improved clamping logic and new widget tests; flutter analyze/test in root and analyze in example all passing.
 2026-03-02: Added gradient background support to TutorialBubble and TutorialBubbleOverlay with precedence over solid color, updated example to show a color fade bubble, and ensured flutter analyze/test in root and analyze in example all pass.
 2026-03-02: Verified any Flutter widget (ElevatedButton, Text, and a custom widget) can be targeted without changing its implementation by measuring its layout rect and driving TutorialBubbleOverlay; flutter analyze/test in root and analyze in example all passing.
+2026-03-02: Introduced TutorialTextBubble for configurable text content and styles (including full TextStyle override), added widget tests, and updated the example to use it; flutter analyze/test in root and analyze in example all passing.

@@ -90,7 +90,12 @@ class _TutorialBubbleDemoPageState extends State<_TutorialBubbleDemoPage> {
                         Color(0xFFAB47BC),
                       ],
                     ),
-                    child: const Text('Tap this button to get started'),
+                    child: const TutorialTextBubble(
+                      text: 'Tap this button to get started',
+                      textColor: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],
