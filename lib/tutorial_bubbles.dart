@@ -1043,6 +1043,14 @@ class TutorialEngineController {
   /// Whether the tutorial has finished executing all steps.
   bool get isFinished => _isFinished;
 
+  final ValueNotifier<bool> _isFinishedNotifier = ValueNotifier<bool>(false);
+
+  /// Listenable that fires when the finished state changes.
+  ///
+  /// This is notified when the tutorial reaches the end of the steps via
+  /// [advance] or [skip], or when [finish] is called explicitly.
+  ValueNotifier<bool> get isFinishedListenable => _isFinishedNotifier;
+
   /// Advances to the next step when the current step has completed.
   ///
   /// Returns true when the active step index changes. When the tutorial
@@ -1059,7 +1067,10 @@ class TutorialEngineController {
       return true;
     }
 
-    _isFinished = true;
+    if (!_isFinished) {
+      _isFinished = true;
+      _isFinishedNotifier.value = true;
+    }
     return false;
   }
 
@@ -1080,7 +1091,10 @@ class TutorialEngineController {
       return true;
     }
 
-    _isFinished = true;
+    if (!_isFinished) {
+      _isFinished = true;
+      _isFinishedNotifier.value = true;
+    }
     return false;
   }
 
@@ -1090,7 +1104,155 @@ class TutorialEngineController {
   /// subsequent calls to [advance] or [skip] will return false without
   /// changing the current step index.
   void finish() {
+    if (_isFinished) {
+      return;
+    }
     _isFinished = true;
+    _isFinishedNotifier.value = true;
   }
 }
+
+/// Widget that renders a tutorial overlay for the current [TutorialStep].
+///
+/// The overlay is visible while the associated [TutorialEngineController]
+/// has not finished. When the last step completes via [TutorialEngineController.advance]
+/// or the tutorial is finished early via [TutorialEngineController.finish] or
+/// [TutorialEngineController.skip], the overlay is removed.
+class TutorialEngine extends StatefulWidget {
+  const TutorialEngine({
+    super.key,
+    required this.controller,
+    required this.child,
+  });
+
+  /// Controller that owns the ordered list of tutorial steps.
+  final TutorialEngineController controller;
+
+  /// The underlying application content that the tutorial overlays.
+  final Widget child;
+
+  @override
+  State<TutorialEngine> createState() => _TutorialEngineState();
+}
+
+class _TutorialEngineState extends State<TutorialEngine> {
+  final GlobalKey _overlayKey = GlobalKey();
+  Rect? _currentTargetRect;
+
+  TutorialEngineController get _controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.currentIndexListenable.addListener(_handleStepChanged);
+    _controller.isFinishedListenable.addListener(_handleFinishedChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTargetRect());
+  }
+
+  @override
+  void didUpdateWidget(TutorialEngine oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.currentIndexListenable
+          .removeListener(_handleStepChanged);
+      oldWidget.controller.isFinishedListenable
+          .removeListener(_handleFinishedChanged);
+      _controller.currentIndexListenable.addListener(_handleStepChanged);
+      _controller.isFinishedListenable.addListener(_handleFinishedChanged);
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _updateTargetRect());
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.currentIndexListenable.removeListener(_handleStepChanged);
+    _controller.isFinishedListenable.removeListener(_handleFinishedChanged);
+    super.dispose();
+  }
+
+  void _handleStepChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateTargetRect();
+      }
+    });
+  }
+
+  void _handleFinishedChanged() {
+    if (!mounted) return;
+    setState(() {
+      _currentTargetRect = null;
+    });
+  }
+
+  void _updateTargetRect() {
+    if (_controller.isFinished) {
+      if (_currentTargetRect != null) {
+        setState(() {
+          _currentTargetRect = null;
+        });
+      }
+      return;
+    }
+
+    final targetKey = _controller.currentStep.targetKey;
+    final targetContext = targetKey.currentContext;
+    final overlayContext = _overlayKey.currentContext;
+
+    if (targetContext == null || overlayContext == null) {
+      return;
+    }
+
+    final targetBox = targetContext.findRenderObject() as RenderBox?;
+    final overlayBox = overlayContext.findRenderObject() as RenderBox?;
+
+    if (targetBox == null || overlayBox == null) {
+      return;
+    }
+
+    final topLeft =
+        targetBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final size = targetBox.size;
+
+    final nextRect = topLeft & size;
+    if (_currentTargetRect != nextRect) {
+      setState(() {
+        _currentTargetRect = nextRect;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool showOverlay =
+        !_controller.isFinished && _currentTargetRect != null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          key: _overlayKey,
+          fit: StackFit.expand,
+          children: [
+            widget.child,
+            if (showOverlay)
+              Positioned.fill(
+                child: TutorialBubbleOverlay(
+                  targetRect: _currentTargetRect!,
+                  preferredSide: TutorialBubbleSide.automatic,
+                  child: Builder(
+                    builder: (context) {
+                      return _controller.currentStep.bubbleBuilder(context);
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 

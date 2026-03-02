@@ -695,6 +695,115 @@ void main() {
   });
 
   testWidgets(
+      'TutorialEngine hides the overlay when the last step completes',
+      (tester) async {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const Text('Step 2'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          child: Column(
+            children: [
+              ElevatedButton(
+                key: key1,
+                onPressed: () {},
+                child: const Text('First'),
+              ),
+              ElevatedButton(
+                key: key2,
+                onPressed: () {},
+                child: const Text('Second'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Overlay is visible for the initial step.
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+
+    // Advance to the second (last) step.
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+
+    // Advancing past the last step finishes the tutorial and hides the overlay.
+    controller.advance();
+    await tester.pumpAndSettle();
+    expect(find.byType(TutorialBubbleOverlay), findsNothing);
+  });
+
+  testWidgets(
+      'TutorialEngine hides the overlay when the tutorial is finished early',
+      (tester) async {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const Text('Step 2'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          child: Column(
+            children: [
+              ElevatedButton(
+                key: key1,
+                onPressed: () {},
+                child: const Text('First'),
+              ),
+              ElevatedButton(
+                key: key2,
+                onPressed: () {},
+                child: const Text('Second'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Overlay is visible for the initial step.
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+
+    // Finishing early hides the overlay without needing to reach the last step.
+    controller.finish();
+    await tester.pumpAndSettle();
+    expect(find.byType(TutorialBubbleOverlay), findsNothing);
+  });
+
+  testWidgets(
       'Any Flutter widget can be targeted via its layout without modifying its own code (ElevatedButton)',
       (tester) async {
     await tester.pumpWidget(

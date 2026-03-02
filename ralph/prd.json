@@ -270,7 +270,7 @@
       "Finishing or skipping the tutorial from any step also dismisses the overlay",
       "After ending, the engine is in a finished state and no overlay remains visible"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "tutorial-engine",
