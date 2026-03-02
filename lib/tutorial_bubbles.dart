@@ -305,6 +305,9 @@ class TutorialBubbleOverlay extends StatelessWidget {
     this.bubbleHaloColor,
     this.bubbleHaloBlurRadius = 16,
     this.bubbleHaloSpreadRadius = 2,
+    this.arrowEnabled = true,
+    this.arrowColor = const Color(0xFFFFFFFF),
+    this.arrowStrokeWidth = 2,
   });
 
   /// Rectangle describing the target widget in this overlay's
@@ -344,6 +347,19 @@ class TutorialBubbleOverlay extends StatelessWidget {
   /// Spread radius for the bubble halo glow.
   final double bubbleHaloSpreadRadius;
 
+  /// Whether to render an arrow connecting the bubble toward the target.
+  ///
+  /// When enabled (the default), a simple arrow is drawn starting from the
+  /// edge of the target and extending in the direction of the bubble's side.
+  /// Set this to false to hide the arrow and show only the bubble.
+  final bool arrowEnabled;
+
+  /// Color used when drawing the arrow stroke.
+  final Color arrowColor;
+
+  /// Stroke width used for the arrow path.
+  final double arrowStrokeWidth;
+
   /// Content inside the bubble.
   final Widget child;
 
@@ -354,21 +370,35 @@ class TutorialBubbleOverlay extends StatelessWidget {
         targetRect: targetRect,
         overlayColor: overlayColor,
       ),
-      child: CustomSingleChildLayout(
-        delegate: _TutorialBubblePositionDelegate(
-          targetRect: targetRect,
-          preferredSide: preferredSide,
-          padding: padding,
-        ),
-        child: TutorialBubble(
-          backgroundColor: backgroundColor,
-          backgroundGradient: backgroundGradient,
-          haloEnabled: bubbleHaloEnabled,
-          haloColor: bubbleHaloColor,
-          haloBlurRadius: bubbleHaloBlurRadius,
-          haloSpreadRadius: bubbleHaloSpreadRadius,
-          child: child,
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CustomSingleChildLayout(
+            delegate: _TutorialBubblePositionDelegate(
+              targetRect: targetRect,
+              preferredSide: preferredSide,
+              padding: padding,
+            ),
+            child: TutorialBubble(
+              backgroundColor: backgroundColor,
+              backgroundGradient: backgroundGradient,
+              haloEnabled: bubbleHaloEnabled,
+              haloColor: bubbleHaloColor,
+              haloBlurRadius: bubbleHaloBlurRadius,
+              haloSpreadRadius: bubbleHaloSpreadRadius,
+              child: child,
+            ),
+          ),
+          if (arrowEnabled)
+            CustomPaint(
+              painter: _TutorialArrowPainter(
+                targetRect: targetRect,
+                side: preferredSide,
+                color: arrowColor,
+                strokeWidth: arrowStrokeWidth,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -498,6 +528,93 @@ class _TutorialOverlayPainter extends CustomPainter {
   bool shouldRepaint(_TutorialOverlayPainter oldDelegate) {
     return oldDelegate.targetRect != targetRect ||
         oldDelegate.overlayColor != overlayColor;
+  }
+}
+
+class _TutorialArrowPainter extends CustomPainter {
+  _TutorialArrowPainter({
+    required this.targetRect,
+    required this.side,
+    required this.color,
+    required this.strokeWidth,
+  });
+
+  final Rect targetRect;
+  final TutorialBubbleSide side;
+  final Color color;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final Path path = Path();
+
+    Offset start;
+    Offset end;
+
+    switch (side) {
+      case TutorialBubbleSide.top:
+        start = Offset(targetRect.center.dx, targetRect.top);
+        end = start.translate(0, -24);
+        break;
+      case TutorialBubbleSide.bottom:
+        start = Offset(targetRect.center.dx, targetRect.bottom);
+        end = start.translate(0, 24);
+        break;
+      case TutorialBubbleSide.left:
+        start = Offset(targetRect.left, targetRect.center.dy);
+        end = start.translate(-24, 0);
+        break;
+      case TutorialBubbleSide.right:
+        start = Offset(targetRect.right, targetRect.center.dy);
+        end = start.translate(24, 0);
+        break;
+      case TutorialBubbleSide.automatic:
+        start = Offset(targetRect.center.dx, targetRect.bottom);
+        end = start.translate(0, 24);
+        break;
+    }
+
+    path.moveTo(start.dx, start.dy);
+    path.lineTo(end.dx, end.dy);
+
+    canvas.drawPath(path, paint);
+
+    // Draw a small arrowhead at the end of the line.
+    const double arrowHeadSize = 6;
+    final Offset direction = (start - end);
+    if (direction == Offset.zero) {
+      return;
+    }
+    final Offset normalized = direction / direction.distance;
+    final Offset perp = Offset(-normalized.dy, normalized.dx);
+
+    final Offset tip = end;
+    final Offset left =
+        tip + normalized * arrowHeadSize + perp * (arrowHeadSize / 2);
+    final Offset right =
+        tip + normalized * arrowHeadSize - perp * (arrowHeadSize / 2);
+
+    final Path head = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(left.dx, left.dy)
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(right.dx, right.dy);
+
+    canvas.drawPath(head, paint);
+  }
+
+  @override
+  bool shouldRepaint(_TutorialArrowPainter oldDelegate) {
+    return oldDelegate.targetRect != targetRect ||
+        oldDelegate.side != side ||
+        oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
   }
 }
 

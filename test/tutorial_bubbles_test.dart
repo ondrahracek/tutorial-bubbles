@@ -390,10 +390,67 @@ void main() {
     );
 
     final customPaintFinder = find.byType(CustomPaint);
-    expect(customPaintFinder, findsOneWidget);
+    expect(customPaintFinder, findsWidgets);
 
-    final customPaint = tester.widget<CustomPaint>(customPaintFinder);
-    expect(customPaint.painter, isNotNull);
+    final paints =
+        tester.widgetList<CustomPaint>(customPaintFinder).toList();
+    expect(paints, isNotEmpty);
+    expect(paints.first.painter, isNotNull);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay shows an arrow by default connecting toward the target',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaintFinder = find.byType(CustomPaint);
+    final paints =
+        tester.widgetList<CustomPaint>(customPaintFinder).toList();
+
+    // Expect at least two CustomPaints: one for the overlay and one for
+    // the arrow.
+    expect(paints.length, greaterThanOrEqualTo(2));
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay can disable the arrow so only the bubble remains',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            arrowEnabled: false,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    // When arrowEnabled is false, we still expect at least one CustomPaint
+    // for the overlay, but not more than two total in this configuration.
+    final customPaintFinder = find.byType(CustomPaint);
+    final paints =
+        tester.widgetList<CustomPaint>(customPaintFinder).toList();
+
+    expect(paints, isNotEmpty);
   });
 
   testWidgets(

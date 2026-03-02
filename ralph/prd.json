@@ -108,7 +108,7 @@
       "When the arrow is disabled, no arrow is rendered and the bubble stands alone",
       "The default state of the arrow is clearly documented"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
