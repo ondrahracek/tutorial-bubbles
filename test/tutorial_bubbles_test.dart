@@ -695,6 +695,93 @@ void main() {
   });
 
   testWidgets(
+      'TutorialEngine can span multiple screens by overlaying a Navigator and targeting widgets on different routes',
+      (tester) async {
+    final firstTargetKey = GlobalKey();
+    final secondTargetKey = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: firstTargetKey,
+          bubbleBuilder: (context) => const Text('First step'),
+        ),
+        TutorialStep(
+          targetKey: secondTargetKey,
+          bubbleBuilder: (context) => const Text('Second step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) {
+          return TutorialEngine(
+            controller: controller,
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+        onGenerateRoute: (settings) {
+          switch (settings.name) {
+            case '/second':
+              return MaterialPageRoute<void>(
+                builder: (context) {
+                  return Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        key: secondTargetKey,
+                        onPressed: () {},
+                        child: const Text('Second screen target'),
+                      ),
+                    ),
+                  );
+                },
+                settings: settings,
+              );
+            case '/':
+            default:
+              return MaterialPageRoute<void>(
+                builder: (context) {
+                  return Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        key: firstTargetKey,
+                        onPressed: () {
+                          Navigator.of(context).pushNamed<void>('/second');
+                          controller.advance();
+                        },
+                        child: const Text('First screen target'),
+                      ),
+                    ),
+                  );
+                },
+                settings: settings,
+              );
+          }
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Initially, the overlay highlights the first route's target.
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+    expect(find.text('First step'), findsOneWidget);
+    expect(find.text('Second step'), findsNothing);
+
+    // Tapping the first target navigates to the second route; once navigation
+    // completes, the controller advances so the next step can target a widget
+    // on the new screen.
+    await tester.tap(find.byKey(firstTargetKey), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+    expect(find.text('First step'), findsNothing);
+    expect(find.text('Second step'), findsOneWidget);
+    expect(find.byKey(secondTargetKey), findsOneWidget);
+  });
+
+  testWidgets(
       'TutorialEngine hides the overlay when the last step completes',
       (tester) async {
     final key1 = GlobalKey();

@@ -190,7 +190,7 @@
       "The overlay is rendered above the Navigator so it appears over the active route",
       "The bubble and highlight update to the current step's target, which may be on a different screen than the previous step"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
