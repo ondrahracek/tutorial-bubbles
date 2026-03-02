@@ -42,6 +42,7 @@ class TutorialBubble extends StatelessWidget {
     this.haloSpreadRadius = 2,
     this.enableTapScaleAnimation = false,
     this.onTap,
+    this.cornerRadius = 12,
   });
 
   final Widget child;
@@ -75,6 +76,13 @@ class TutorialBubble extends StatelessWidget {
   /// and the scale animation plays.
   final VoidCallback? onTap;
 
+  /// Corner radius applied to the bubble background.
+  ///
+  /// The default value of 12 gives the bubble a soft, rounded,
+  /// bubble-like appearance. Callers can adjust this to customize
+  /// how round the bubble corners appear.
+  final double cornerRadius;
+
   static const Color _defaultBackgroundColor = Color(0xFF303030);
 
   @override
@@ -88,6 +96,7 @@ class TutorialBubble extends StatelessWidget {
       haloSpreadRadius: haloSpreadRadius,
       enableTapScaleAnimation: enableTapScaleAnimation,
       onTap: onTap,
+      cornerRadius: cornerRadius,
       child: child,
     );
   }
@@ -104,6 +113,7 @@ class _TutorialBubbleBody extends StatefulWidget {
     required this.haloSpreadRadius,
     required this.enableTapScaleAnimation,
     required this.onTap,
+    required this.cornerRadius,
   });
 
   final Widget child;
@@ -115,6 +125,7 @@ class _TutorialBubbleBody extends StatefulWidget {
   final double haloSpreadRadius;
   final bool enableTapScaleAnimation;
   final VoidCallback? onTap;
+  final double cornerRadius;
 
   @override
   State<_TutorialBubbleBody> createState() => _TutorialBubbleBodyState();
@@ -191,7 +202,7 @@ class _TutorialBubbleBodyState extends State<_TutorialBubbleBody>
     final decoration = BoxDecoration(
       color: widget.backgroundGradient == null ? defaultBackground : null,
       gradient: widget.backgroundGradient,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(widget.cornerRadius),
       boxShadow: boxShadow,
     );
 
@@ -653,19 +664,25 @@ class _TutorialOverlayPainter extends CustomPainter {
       return;
     }
 
-    final overlayRect = Offset.zero & size;
+    final Rect overlayRect = Offset.zero & size;
 
+    // Draw the dimming overlay across the full available bounds.
     canvas.saveLayer(overlayRect, Paint());
-
-    final overlayPaint = Paint()..color = overlayColor;
+    final Paint overlayPaint = Paint()..color = overlayColor;
     canvas.drawRect(overlayRect, overlayPaint);
 
-    final clearPaint = Paint()..blendMode = BlendMode.clear;
-    final highlightRect = RRect.fromRectAndRadius(
-      targetRect.inflate(8),
-      const Radius.circular(12),
-    );
-    canvas.drawRRect(highlightRect, clearPaint);
+    // Clear a hole that matches the target's layout bounds exactly, without
+    // adding extra padding around it.
+    final double left = targetRect.left.clamp(0.0, overlayRect.right);
+    final double right = targetRect.right.clamp(0.0, overlayRect.right);
+    final double top = targetRect.top.clamp(0.0, overlayRect.bottom);
+    final double bottom = targetRect.bottom.clamp(0.0, overlayRect.bottom);
+
+    if (right > left && bottom > top) {
+      final Rect highlightRect = Rect.fromLTRB(left, top, right, bottom);
+      final Paint clearPaint = Paint()..blendMode = BlendMode.clear;
+      canvas.drawRect(highlightRect, clearPaint);
+    }
 
     canvas.restore();
   }

@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -174,6 +177,43 @@ void main() {
     final decoration = decoratedBox.decoration as BoxDecoration;
 
     expect(decoration.color, const Color(0xFF303030));
+  });
+
+  testWidgets(
+      'TutorialBubble uses a soft rounded default corner radius when none is provided',
+      (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.borderRadius, BorderRadius.circular(12));
+  });
+
+  testWidgets('TutorialBubble corner radius is configurable', (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TutorialBubble(
+          cornerRadius: 24,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final decoratedBox =
+        tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = decoratedBox.decoration as BoxDecoration;
+
+    expect(decoration.borderRadius, BorderRadius.circular(24));
   });
 
   testWidgets('TutorialBubble uses the provided background color',
@@ -397,6 +437,90 @@ void main() {
         tester.widgetList<CustomPaint>(customPaintFinder).toList();
     expect(paints, isNotEmpty);
     expect(paints.first.painter, isNotNull);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay cutout matches the target bounds exactly',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(60, 80, 40, 30);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            overlayColor: Color(0xFF000000),
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+    expect(customPaints, isNotEmpty);
+
+    final CustomPaint overlayPaintWidget = customPaints.first;
+    final CustomPainter? painter = overlayPaintWidget.painter;
+    expect(painter, isNotNull);
+
+    const ui.Size paintSize = ui.Size(200, 200);
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+
+    painter!.paint(canvas, paintSize);
+    final ui.Picture picture = recorder.endRecording();
+    final ui.Image image = await picture.toImage(
+      paintSize.width.toInt(),
+      paintSize.height.toInt(),
+    );
+    final ByteData? bytes =
+        await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+
+    expect(bytes, isNotNull);
+
+    Color pixelAt(double dx, double dy) {
+      final int x = dx.round().clamp(0, paintSize.width.toInt() - 1);
+      final int y = dy.round().clamp(0, paintSize.height.toInt() - 1);
+      final int offset = (y * paintSize.width.toInt() + x) * 4;
+      final int r = bytes!.getUint8(offset);
+      final int g = bytes.getUint8(offset + 1);
+      final int b = bytes.getUint8(offset + 2);
+      final int a = bytes.getUint8(offset + 3);
+      return Color.fromARGB(a, r, g, b);
+    }
+
+    // Points just inside each edge of the target should be fully transparent.
+    final insideTop =
+        pixelAt(targetRect.left + 1, targetRect.top + 1);
+    final insideBottom =
+        pixelAt(targetRect.left + 1, targetRect.bottom - 1);
+    final insideLeft =
+        pixelAt(targetRect.left + 1, targetRect.center.dy);
+    final insideRight =
+        pixelAt(targetRect.right - 1, targetRect.center.dy);
+
+    expect(insideTop.a, 0.0);
+    expect(insideBottom.a, 0.0);
+    expect(insideLeft.a, 0.0);
+    expect(insideRight.a, 0.0);
+
+    // Points just outside each edge should remain covered by the overlay.
+    final outsideTop =
+        pixelAt(targetRect.center.dx, targetRect.top - 1);
+    final outsideBottom =
+        pixelAt(targetRect.center.dx, targetRect.bottom + 1);
+    final outsideLeft =
+        pixelAt(targetRect.left - 1, targetRect.center.dy);
+    final outsideRight =
+        pixelAt(targetRect.right + 1, targetRect.center.dy);
+
+    expect(outsideTop.a, closeTo(1.0, 0.001));
+    expect(outsideBottom.a, closeTo(1.0, 0.001));
+    expect(outsideLeft.a, closeTo(1.0, 0.001));
+    expect(outsideRight.a, closeTo(1.0, 0.001));
   });
 
   testWidgets(

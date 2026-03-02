@@ -370,7 +370,7 @@
       "The hole in the overlay has no extra padding around the target",
       "The cutout shape matches the target widget's layout bounds precisely"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
@@ -419,7 +419,7 @@
       "The default gives the bubble a soft, rounded, bubble-like appearance",
       "Callers can adjust the corner radius"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
