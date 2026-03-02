@@ -399,6 +399,45 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay can enable a halo around the target with configurable color and blur',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+    const haloColor = Color(0xFF00AAFF);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            targetHaloEnabled: true,
+            targetHaloColor: haloColor,
+            targetHaloBlurRadius: 20,
+            targetHaloStrokeWidth: 6,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+
+    final haloPaints = customPaints
+        .where((p) => p.painter is TutorialTargetHaloPainter)
+        .toList();
+
+    expect(haloPaints, isNotEmpty);
+
+    final haloPainter =
+        haloPaints.first.painter! as TutorialTargetHaloPainter;
+    expect(haloPainter.color, haloColor);
+    expect(haloPainter.blurRadius, 20);
+    expect(haloPainter.strokeWidth, 6);
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay shows an arrow by default connecting toward the target',
       (tester) async {
     const targetRect = Rect.fromLTWH(100, 100, 40, 40);

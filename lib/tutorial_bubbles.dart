@@ -301,6 +301,10 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.backgroundColor,
     this.backgroundGradient,
     this.padding = const EdgeInsets.all(8),
+    this.targetHaloEnabled = false,
+    this.targetHaloColor,
+    this.targetHaloBlurRadius = 16,
+    this.targetHaloStrokeWidth = 4,
     this.bubbleHaloEnabled = false,
     this.bubbleHaloColor,
     this.bubbleHaloBlurRadius = 16,
@@ -340,6 +344,24 @@ class TutorialBubbleOverlay extends StatefulWidget {
 
   /// Padding between the bubble and the [targetRect].
   final EdgeInsets padding;
+
+  /// Whether to draw a glow/halo around the highlighted [targetRect].
+  ///
+  /// When enabled, a soft halo is rendered around the target using
+  /// [targetHaloColor], [targetHaloBlurRadius], and
+  /// [targetHaloStrokeWidth].
+  final bool targetHaloEnabled;
+
+  /// Optional color for the target halo glow.
+  ///
+  /// When null, a color derived from [overlayColor] is used.
+  final Color? targetHaloColor;
+
+  /// Blur radius for the target halo glow.
+  final double targetHaloBlurRadius;
+
+  /// Stroke width for the target halo glow.
+  final double targetHaloStrokeWidth;
 
   /// Whether the bubble rendered by this overlay should draw a halo glow.
   final bool bubbleHaloEnabled;
@@ -435,6 +457,18 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
             ),
           ),
         ),
+        if (widget.targetHaloEnabled)
+          IgnorePointer(
+            child: CustomPaint(
+              painter: TutorialTargetHaloPainter(
+                targetRect: widget.targetRect,
+                overlayColor: widget.overlayColor,
+                color: widget.targetHaloColor,
+                blurRadius: widget.targetHaloBlurRadius,
+                strokeWidth: widget.targetHaloStrokeWidth,
+              ),
+            ),
+          ),
         _TutorialInteractionBlocker(
           targetRect: widget.targetRect,
           enabled: widget.blockOutsideTarget,
@@ -789,6 +823,59 @@ class TutorialArrowPainter extends CustomPainter {
         oldDelegate.haloBlurRadius != haloBlurRadius ||
         oldDelegate.haloStrokeWidthMultiplier !=
             haloStrokeWidthMultiplier;
+  }
+}
+
+/// Painter that draws a soft glow/halo around the highlighted target rect.
+class TutorialTargetHaloPainter extends CustomPainter {
+  TutorialTargetHaloPainter({
+    required this.targetRect,
+    required this.overlayColor,
+    this.color,
+    this.blurRadius = 16,
+    this.strokeWidth = 4,
+  });
+
+  final Rect targetRect;
+  final Color overlayColor;
+  final Color? color;
+  final double blurRadius;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (overlayColor.a == 0) {
+      return;
+    }
+
+    final Rect haloRect = targetRect.inflate(6);
+    final RRect haloRRect = RRect.fromRectAndRadius(
+      haloRect,
+      const Radius.circular(14),
+    );
+
+    final Color effectiveColor =
+        (color ?? overlayColor).withValues(alpha: 0.7);
+
+    final Paint haloPaint = Paint()
+      ..color = effectiveColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..maskFilter = MaskFilter.blur(
+        BlurStyle.outer,
+        blurRadius,
+      );
+
+    canvas.drawRRect(haloRRect, haloPaint);
+  }
+
+  @override
+  bool shouldRepaint(TutorialTargetHaloPainter oldDelegate) {
+    return oldDelegate.targetRect != targetRect ||
+        oldDelegate.overlayColor != overlayColor ||
+        oldDelegate.color != color ||
+        oldDelegate.blurRadius != blurRadius ||
+        oldDelegate.strokeWidth != strokeWidth;
   }
 }
 

@@ -169,7 +169,7 @@
       "Tapping the target still works normally when the halo is active",
       "No halo appears when the option is disabled"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
