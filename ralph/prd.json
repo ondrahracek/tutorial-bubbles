@@ -230,7 +230,7 @@
       "No engine or sequence setup is required for this single-spotlight usage",
       "The example app demonstrates this standalone mode"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "tutorial-engine",

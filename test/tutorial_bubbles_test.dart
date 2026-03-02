@@ -695,6 +695,84 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay and bubble can be used as a standalone spotlight without any tutorial engine',
+      (tester) async {
+    final GlobalKey targetKey = GlobalKey();
+    final GlobalKey overlayKey = GlobalKey();
+    Rect? targetRect;
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            key: overlayKey,
+            width: 200,
+            height: 200,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                if (targetRect == null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final targetContext = targetKey.currentContext;
+                    final overlayContext = overlayKey.currentContext;
+                    if (targetContext == null || overlayContext == null) {
+                      return;
+                    }
+                    final targetBox =
+                        targetContext.findRenderObject() as RenderBox?;
+                    final overlayBox =
+                        overlayContext.findRenderObject() as RenderBox?;
+                    if (targetBox == null || overlayBox == null) {
+                      return;
+                    }
+                    final topLeft = targetBox.localToGlobal(
+                      Offset.zero,
+                      ancestor: overlayBox,
+                    );
+                    final size = targetBox.size;
+                    setState(() {
+                      targetRect = topLeft & size;
+                    });
+                  });
+                }
+
+                return Stack(
+                  children: [
+                    Center(
+                      child: SizedBox(
+                        key: targetKey,
+                        width: 40,
+                        height: 40,
+                        child: const ColoredBox(color: Colors.blue),
+                      ),
+                    ),
+                    if (targetRect != null)
+                      Positioned.fill(
+                        child: TutorialBubbleOverlay(
+                          targetRect: targetRect!,
+                          preferredSide: TutorialBubbleSide.top,
+                          child: const TutorialTextBubble(
+                            text: 'Standalone spotlight',
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+    expect(find.byType(TutorialEngine), findsNothing);
+    expect(find.text('Standalone spotlight'), findsOneWidget);
+  });
+
+  testWidgets(
       'TutorialEngine can span multiple screens by overlaying a Navigator and targeting widgets on different routes',
       (tester) async {
     final firstTargetKey = GlobalKey();
