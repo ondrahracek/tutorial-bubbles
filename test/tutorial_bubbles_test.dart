@@ -671,6 +671,38 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay arrow stroke width is configurable via arrowStrokeWidth',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            arrowStrokeWidth: 6,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+    final arrowPaints = customPaints
+        .where((p) => p.painter is TutorialArrowPainter)
+        .cast<CustomPaint>()
+        .toList();
+
+    expect(arrowPaints, isNotEmpty);
+    final arrowPainter =
+        arrowPaints.first.painter! as TutorialArrowPainter;
+    expect(arrowPainter.strokeWidth, 6);
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay can enable an arrow halo with configurable color and blur',
       (tester) async {
     const targetRect = Rect.fromLTWH(100, 100, 40, 40);

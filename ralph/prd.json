@@ -390,7 +390,7 @@
       "The default width makes the arrow clearly visible and noticeable",
       "Callers can increase or decrease the arrow thickness"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
