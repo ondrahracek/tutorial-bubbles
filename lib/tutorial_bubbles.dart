@@ -1261,10 +1261,19 @@ class TutorialEngineController {
 
 /// Widget that renders a tutorial overlay for the current [TutorialStep].
 ///
+/// This widget composes the same visual primitives used in standalone
+/// spotlight mode: it measures the current step's [TutorialStep.targetKey]
+/// and renders a [TutorialBubbleOverlay], which in turn draws the dark
+/// overlay, optional arrow, halos, and a [TutorialBubble] for the bubble
+/// content. No separate engine-specific implementation of these visuals
+/// exists; changes to [TutorialBubble], [TutorialBubbleOverlay], or their
+/// painters automatically apply to both standalone and engine-driven usage.
+///
 /// The overlay is visible while the associated [TutorialEngineController]
-/// has not finished. When the last step completes via [TutorialEngineController.advance]
-/// or the tutorial is finished early via [TutorialEngineController.finish] or
-/// [TutorialEngineController.skip], the overlay is removed.
+/// has not finished. When the last step completes via
+/// [TutorialEngineController.advance] or the tutorial is finished early via
+/// [TutorialEngineController.finish] or [TutorialEngineController.skip], the
+/// overlay is removed.
 class TutorialEngine extends StatefulWidget {
   const TutorialEngine({
     super.key,

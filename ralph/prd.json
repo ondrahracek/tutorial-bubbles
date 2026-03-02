@@ -290,7 +290,7 @@
       "The engine composes the same visual components used in standalone spotlight mode",
       "Changes to bubble styling apply to both engine and standalone usage"
     ],
-    "passes": false
+      "passes": true
   },
   {
     "category": "tutorial-engine",
