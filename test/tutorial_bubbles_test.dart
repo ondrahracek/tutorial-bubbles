@@ -1437,6 +1437,49 @@ void main() {
 
     expect(controller.currentIndex, 1);
   });
+
+  testWidgets(
+      'TutorialEngine gracefully waits for the current step target to appear on screen',
+      (tester) async {
+    final targetKey = GlobalKey();
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: targetKey,
+          bubbleBuilder: (context) => const TutorialTextBubble(
+            text: 'Delayed target step',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: _DelayedTargetHost(
+          controller: controller,
+          targetKey: targetKey,
+        ),
+      ),
+    );
+
+    // Start the engine; initially the target is not yet built so the engine
+    // should not crash and no overlay is shown.
+    controller.start();
+    await tester.pump();
+    expect(find.byType(TutorialBubbleOverlay), findsNothing);
+
+    // Make the target appear on screen, then pump frames so the engine can
+    // resolve its layout and show the overlay for the current step.
+    final hostState = tester.state<_DelayedTargetHostState>(
+      find.byType(_DelayedTargetHost),
+    );
+    hostState.showTarget();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
+    expect(find.text('Delayed target step'), findsOneWidget);
+  });
 }
 
 class _TargetOverlayDemo extends StatefulWidget {
@@ -1641,6 +1684,47 @@ class _CustomTargetWidget extends StatelessWidget {
     return const SizedBox(
       width: 40,
       height: 40,
+    );
+  }
+}
+
+class _DelayedTargetHost extends StatefulWidget {
+  const _DelayedTargetHost({
+    required this.controller,
+    required this.targetKey,
+  });
+
+  final TutorialEngineController controller;
+  final GlobalKey targetKey;
+
+  @override
+  State<_DelayedTargetHost> createState() => _DelayedTargetHostState();
+}
+
+class _DelayedTargetHostState extends State<_DelayedTargetHost> {
+  bool _showTarget = false;
+
+  void showTarget() {
+    if (mounted) {
+      setState(() {
+        _showTarget = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TutorialEngine(
+      controller: widget.controller,
+      child: Center(
+        child: _showTarget
+            ? ElevatedButton(
+                key: widget.targetKey,
+                onPressed: () {},
+                child: const Text('Delayed target'),
+              )
+            : const SizedBox.shrink(),
+      ),
     );
   }
 }

@@ -1211,6 +1211,7 @@ class TutorialEngine extends StatefulWidget {
 class _TutorialEngineState extends State<TutorialEngine> {
   final GlobalKey _overlayKey = GlobalKey();
   Rect? _currentTargetRect;
+  bool _pendingTargetRectUpdate = false;
 
   TutorialEngineController get _controller => widget.controller;
 
@@ -1266,7 +1267,22 @@ class _TutorialEngineState extends State<TutorialEngine> {
     }
   }
 
+  void _scheduleTargetRectUpdateRetry() {
+    if (!mounted || _controller.isFinished || _pendingTargetRectUpdate) {
+      return;
+    }
+    _pendingTargetRectUpdate = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _updateTargetRect();
+    });
+  }
+
   void _updateTargetRect() {
+    _pendingTargetRectUpdate = false;
+
     if (_controller.isFinished) {
       if (_currentTargetRect != null) {
         setState(() {
@@ -1281,6 +1297,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
     final overlayContext = _overlayKey.currentContext;
 
     if (targetContext == null || overlayContext == null) {
+      _scheduleTargetRectUpdateRetry();
       return;
     }
 
@@ -1288,6 +1305,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
     final overlayBox = overlayContext.findRenderObject() as RenderBox?;
 
     if (targetBox == null || overlayBox == null) {
+      _scheduleTargetRectUpdateRetry();
       return;
     }
 

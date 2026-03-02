@@ -280,7 +280,7 @@
       "The overlay appears; the highlight and bubble update when the target becomes available",
       "Or the behavior is clearly documented so consumers order steps to match their navigation flow"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "tutorial-engine",
