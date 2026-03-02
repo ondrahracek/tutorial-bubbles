@@ -309,6 +309,10 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.arrowEnabled = true,
     this.arrowColor = const Color(0xFFFFFFFF),
     this.arrowStrokeWidth = 2,
+    this.arrowHaloEnabled = false,
+    this.arrowHaloColor,
+    this.arrowHaloBlurRadius = 8,
+    this.arrowHaloStrokeWidthMultiplier = 2,
   });
 
   /// Rectangle describing the target widget in this overlay's
@@ -368,6 +372,25 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// Stroke width used for the arrow path.
   final double arrowStrokeWidth;
 
+  /// Whether to draw a glow/halo around the arrow stroke.
+  ///
+  /// When enabled, a soft blurred stroke is rendered behind the arrow using
+  /// [arrowHaloColor], [arrowHaloBlurRadius], and
+  /// [arrowHaloStrokeWidthMultiplier].
+  final bool arrowHaloEnabled;
+
+  /// Optional override color for the arrow halo glow.
+  ///
+  /// When null, a color derived from [arrowColor] is used.
+  final Color? arrowHaloColor;
+
+  /// Blur radius for the arrow halo glow.
+  final double arrowHaloBlurRadius;
+
+  /// Multiplier applied to [arrowStrokeWidth] to compute the halo stroke
+  /// width.
+  final double arrowHaloStrokeWidthMultiplier;
+
   /// Content inside the bubble.
   final Widget child;
 
@@ -426,11 +449,16 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
           ),
           if (widget.arrowEnabled)
             CustomPaint(
-              painter: _TutorialArrowPainter(
+              painter: TutorialArrowPainter(
                 targetRect: widget.targetRect,
                 side: effectiveArrowSide,
                 color: widget.arrowColor,
                 strokeWidth: widget.arrowStrokeWidth,
+                haloEnabled: widget.arrowHaloEnabled,
+                haloColor: widget.arrowHaloColor,
+                haloBlurRadius: widget.arrowHaloBlurRadius,
+                haloStrokeWidthMultiplier:
+                    widget.arrowHaloStrokeWidthMultiplier,
               ),
             ),
         ],
@@ -576,22 +604,30 @@ class _TutorialOverlayPainter extends CustomPainter {
   }
 }
 
-class _TutorialArrowPainter extends CustomPainter {
-  _TutorialArrowPainter({
+class TutorialArrowPainter extends CustomPainter {
+  TutorialArrowPainter({
     required this.targetRect,
     required this.side,
     required this.color,
     required this.strokeWidth,
+    this.haloEnabled = false,
+    this.haloColor,
+    this.haloBlurRadius = 8,
+    this.haloStrokeWidthMultiplier = 2,
   });
 
   final Rect targetRect;
   final TutorialBubbleSide side;
   final Color color;
   final double strokeWidth;
+  final bool haloEnabled;
+  final Color? haloColor;
+  final double haloBlurRadius;
+  final double haloStrokeWidthMultiplier;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final Paint arrowPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
@@ -642,7 +678,24 @@ class _TutorialArrowPainter extends CustomPainter {
       path.lineTo(bodyEnd.dx, bodyEnd.dy);
     }
 
-    canvas.drawPath(path, paint);
+    // Optionally draw a blurred halo behind the arrow using a thicker stroke.
+    if (haloEnabled) {
+      final double haloStrokeWidth =
+          (strokeWidth * haloStrokeWidthMultiplier).clamp(strokeWidth, strokeWidth * 4);
+      final Paint haloPaint = Paint()
+        ..color = (haloColor ?? color).withValues(alpha: 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = haloStrokeWidth
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal,
+          haloBlurRadius,
+        );
+
+      canvas.drawPath(path, haloPaint);
+    }
+
+    canvas.drawPath(path, arrowPaint);
 
     // Arrowhead that ends exactly at the target border tip.
     final Offset perp = Offset(-direction.dy, direction.dx);
@@ -661,7 +714,22 @@ class _TutorialArrowPainter extends CustomPainter {
         tip.dy - direction.dy * clampedHeadLength -
             perp.dy * (clampedHeadLength / 2),
       );
-    canvas.drawPath(head, paint);
+    if (haloEnabled) {
+      final double haloStrokeWidth =
+          (strokeWidth * haloStrokeWidthMultiplier).clamp(strokeWidth, strokeWidth * 4);
+      final Paint haloHeadPaint = Paint()
+        ..color = (haloColor ?? color).withValues(alpha: 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = haloStrokeWidth
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal,
+          haloBlurRadius,
+        );
+      canvas.drawPath(head, haloHeadPaint);
+    }
+
+    canvas.drawPath(head, arrowPaint);
   }
 
   /// Point on the target rect edge where the arrow tip lands (facing the bubble).
@@ -698,11 +766,16 @@ class _TutorialArrowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TutorialArrowPainter oldDelegate) {
+  bool shouldRepaint(TutorialArrowPainter oldDelegate) {
     return oldDelegate.targetRect != targetRect ||
         oldDelegate.side != side ||
         oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth;
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.haloEnabled != haloEnabled ||
+        oldDelegate.haloColor != haloColor ||
+        oldDelegate.haloBlurRadius != haloBlurRadius ||
+        oldDelegate.haloStrokeWidthMultiplier !=
+            haloStrokeWidthMultiplier;
   }
 }
 

@@ -426,6 +426,47 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay can enable an arrow halo with configurable color and blur',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+    const haloColor = Color(0xFF00FFAA);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            arrowHaloEnabled: true,
+            arrowHaloColor: haloColor,
+            arrowHaloBlurRadius: 12,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+
+    // Find the arrow painter among the CustomPaint widgets.
+    final arrowPaints = customPaints
+        .where((p) => p.painter is TutorialArrowPainter)
+        .cast<CustomPaint>()
+        .toList();
+
+    expect(arrowPaints, isNotEmpty);
+
+    final arrowPainter =
+        arrowPaints.first.painter! as TutorialArrowPainter;
+    expect(arrowPainter.haloEnabled, isTrue);
+    expect(arrowPainter.haloColor, haloColor);
+    expect(arrowPainter.haloBlurRadius, 12);
+    expect(arrowPainter.haloStrokeWidthMultiplier, greaterThan(1));
+  });
+
+  testWidgets(
       'TutorialBubbleOverlay can disable the arrow so only the bubble remains',
       (tester) async {
     const targetRect = Rect.fromLTWH(100, 100, 40, 40);

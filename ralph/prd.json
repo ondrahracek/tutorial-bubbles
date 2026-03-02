@@ -148,7 +148,7 @@
       "The arrow halo can be adjusted independently from the bubble halo",
       "Disabling the arrow halo removes it without affecting the arrow itself"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
