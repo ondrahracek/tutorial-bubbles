@@ -400,7 +400,7 @@
       "The bubble does not stretch edge-to-edge across the screen by default",
       "Bubble height adjusts automatically to fit its content"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "UI",
