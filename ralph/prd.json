@@ -341,7 +341,7 @@
       "A listener or stream fires whenever the active step changes",
       "The app can react to step changes (e.g. enable/disable a Next button)"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "API",

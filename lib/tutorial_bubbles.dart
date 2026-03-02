@@ -920,12 +920,16 @@ class TutorialEngineController {
   TutorialEngineController({
     required List<TutorialStep> steps,
   })  : assert(steps.isNotEmpty, 'TutorialEngineController requires at least one step.'),
-        _steps = List.unmodifiable(steps);
+        _steps = List.unmodifiable(steps),
+        _currentIndexNotifier = ValueNotifier<int>(0);
 
   final List<TutorialStep> _steps;
 
   /// Ordered, immutable list of steps managed by this controller.
   List<TutorialStep> get steps => _steps;
+
+  /// Total number of steps in the tutorial.
+  int get totalSteps => _steps.length;
 
   int _currentIndex = 0;
 
@@ -937,6 +941,15 @@ class TutorialEngineController {
 
   /// Whether the current step is the last step in the tutorial.
   bool get isLastStep => _currentIndex == _steps.length - 1;
+
+  final ValueNotifier<int> _currentIndexNotifier;
+
+  /// Listenable that fires whenever the active step index changes.
+  ///
+  /// Listeners are notified only when the active step changes; repeated
+  /// calls to [advance] or [skip] after the tutorial has finished will not
+  /// trigger additional notifications.
+  ValueNotifier<int> get currentIndexListenable => _currentIndexNotifier;
 
   bool _isFinished = false;
 
@@ -955,6 +968,7 @@ class TutorialEngineController {
 
     if (_currentIndex < _steps.length - 1) {
       _currentIndex += 1;
+      _currentIndexNotifier.value = _currentIndex;
       return true;
     }
 
@@ -975,6 +989,7 @@ class TutorialEngineController {
 
     if (_currentIndex < _steps.length - 1) {
       _currentIndex += 1;
+      _currentIndexNotifier.value = _currentIndex;
       return true;
     }
 

@@ -784,6 +784,55 @@ void main() {
   });
 
   test(
+      'TutorialEngineController exposes totalSteps and notifies when the active step changes',
+      () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+    final key3 = GlobalKey();
+
+    final steps = [
+      TutorialStep(
+        targetKey: key1,
+        bubbleBuilder: (context) => const Text('Step 1'),
+      ),
+      TutorialStep(
+        targetKey: key2,
+        bubbleBuilder: (context) => const Text('Step 2'),
+      ),
+      TutorialStep(
+        targetKey: key3,
+        bubbleBuilder: (context) => const Text('Step 3'),
+      ),
+    ];
+
+    final controller = TutorialEngineController(steps: steps);
+
+    expect(controller.totalSteps, 3);
+    expect(controller.currentIndex, 0);
+    expect(controller.currentIndexListenable.value, 0);
+
+    final recordedIndices = <int>[];
+    controller.currentIndexListenable.addListener(() {
+      recordedIndices.add(controller.currentIndexListenable.value);
+    });
+
+    final firstAdvanceChanged = controller.advance();
+    expect(firstAdvanceChanged, isTrue);
+    expect(controller.currentIndex, 1);
+    expect(recordedIndices, [1]);
+
+    final secondAdvanceChanged = controller.advance();
+    expect(secondAdvanceChanged, isTrue);
+    expect(controller.currentIndex, 2);
+    expect(recordedIndices, [1, 2]);
+
+    final thirdAdvanceChanged = controller.advance();
+    expect(thirdAdvanceChanged, isFalse);
+    expect(controller.currentIndex, 2);
+    expect(recordedIndices, [1, 2]);
+  });
+
+  test(
       'TutorialEngineController provides programmatic skip control that advances without requiring target action',
       () {
     final key1 = GlobalKey();
