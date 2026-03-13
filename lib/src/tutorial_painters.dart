@@ -30,8 +30,7 @@ class TutorialOverlayPainter extends CustomPainter {
     final Paint overlayPaint = Paint()..color = overlayColor;
     canvas.drawRect(overlayRect, overlayPaint);
 
-    // Clear a hole that matches the target's layout bounds exactly, without
-    // adding extra padding around it.
+    // Clear a hole that matches the target's layout bounds exactly.
     final double left = targetRect.left.clamp(0.0, overlayRect.right);
     final double right = targetRect.right.clamp(0.0, overlayRect.right);
     final double top = targetRect.top.clamp(0.0, overlayRect.bottom);
@@ -39,8 +38,19 @@ class TutorialOverlayPainter extends CustomPainter {
 
     if (right > left && bottom > top) {
       final Rect highlightRect = Rect.fromLTRB(left, top, right, bottom);
+      final Path highlightPath = highlightShape.createPath(highlightRect);
       final Paint clearPaint = Paint()..blendMode = BlendMode.clear;
-      canvas.drawPath(highlightShape.createPath(highlightRect), clearPaint);
+      canvas.drawPath(highlightPath, clearPaint);
+
+      // Feather the overlay edge slightly outside the target so target-owned
+      // shadows feel less boxed-in while leaving the target body untouched.
+      final Paint featherPaint = Paint()
+        ..color = overlayColor.withValues(alpha: overlayColor.a * 0.28)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 10)
+        ..blendMode = BlendMode.dstOut;
+      canvas.drawPath(highlightPath, featherPaint);
     }
 
     canvas.restore();

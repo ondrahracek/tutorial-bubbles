@@ -870,6 +870,7 @@ void main() {
     expect(arrowPainter.gradient, gradient);
   });
 
+
   testWidgets(
       'TutorialBubbleOverlay blocks interactions outside the highlighted target',
       (tester) async {
