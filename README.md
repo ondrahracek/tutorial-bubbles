@@ -46,7 +46,10 @@ Stack(
         child: TutorialBubbleOverlay(
           targetRect: targetRect!,
           preferredSide: TutorialBubbleSide.top,
-          child: const TutorialTextBubble(
+          highlightShape: const TutorialHighlightShape.roundedRect(
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+          ),
+          child: const TutorialTextContent(
             text: 'Tap this button to get started',
             textColor: Colors.white,
           ),
@@ -68,7 +71,7 @@ final controller = TutorialEngineController(
   steps: [
     TutorialStep(
       targetKey: step1Key,
-      bubbleBuilder: (context) => const TutorialTextBubble(text: 'First step'),
+      bubbleBuilder: (context) => const TutorialTextContent(text: 'First step'),
     ),
     // Add more steps...
   ],

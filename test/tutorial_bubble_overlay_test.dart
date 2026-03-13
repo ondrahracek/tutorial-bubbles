@@ -93,6 +93,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     final customPaintFinder = find.byType(CustomPaint);
     expect(customPaintFinder, findsWidgets);
@@ -121,6 +122,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     final customPaints =
         tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
@@ -165,6 +167,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     final customPaints =
         tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
@@ -700,6 +703,75 @@ void main() {
     expect(find.byType(TutorialBubbleOverlay), findsOneWidget);
     expect(find.byType(TutorialEngine), findsNothing);
     expect(find.text('Standalone spotlight'), findsOneWidget);
+    expect(find.byType(TutorialBubble), findsOneWidget);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay unwraps TutorialTextBubble content to avoid nested bubble chrome',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            backgroundGradient: LinearGradient(
+              colors: <Color>[Color(0xFF42A5F5), Color(0xFFAB47BC)],
+            ),
+            child: TutorialTextBubble(text: 'No nested bubble'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubble), findsOneWidget);
+    expect(find.byType(DecoratedBox), findsOneWidget);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay can inherit gradient arrow styling and rounded highlight shape',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+    const gradient = LinearGradient(
+      colors: <Color>[Color(0xFF42A5F5), Color(0xFFAB47BC)],
+    );
+    const highlightShape = TutorialHighlightShape.roundedRect(
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    );
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            backgroundGradient: gradient,
+            highlightShape: highlightShape,
+            child: TutorialTextContent(text: 'Styled spotlight'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+    final overlayPainter = customPaints
+        .firstWhere((p) => p.painter is TutorialOverlayPainter)
+        .painter! as TutorialOverlayPainter;
+    final arrowPainter = customPaints
+        .firstWhere((p) => p.painter is TutorialArrowPainter)
+        .painter! as TutorialArrowPainter;
+
+    expect(overlayPainter.highlightShape, highlightShape);
+    expect(arrowPainter.gradient, gradient);
   });
 
   testWidgets(
@@ -1002,4 +1074,3 @@ class _CustomTargetWidget extends StatelessWidget {
     );
   }
 }
-

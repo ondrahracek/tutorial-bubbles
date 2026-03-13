@@ -25,7 +25,7 @@ TutorialEngineController createTutorialController(TutorialKeys keys) {
     steps: [
       TutorialStep(
         targetKey: keys.step0,
-        bubbleBuilder: (context) => const TutorialTextBubble(
+        bubbleBuilder: (context) => const TutorialTextContent(
           text: 'Tap here to start the tutorial flow',
           textColor: Colors.white,
           fontSize: 16,
@@ -33,7 +33,7 @@ TutorialEngineController createTutorialController(TutorialKeys keys) {
       ),
       TutorialStep(
         targetKey: keys.step1,
-        bubbleBuilder: (context) => const TutorialTextBubble(
+        bubbleBuilder: (context) => const TutorialTextContent(
           text: 'This uses a solid color (global default)',
           textColor: Colors.white,
           fontSize: 16,
@@ -41,7 +41,7 @@ TutorialEngineController createTutorialController(TutorialKeys keys) {
       ),
       TutorialStep(
         targetKey: keys.step2,
-        bubbleBuilder: (context) => const TutorialTextBubble(
+        bubbleBuilder: (context) => const TutorialTextContent(
           text: 'Tap to go to the next screen — the tutorial follows',
           textColor: Colors.white,
           fontSize: 16,
@@ -55,7 +55,7 @@ TutorialEngineController createTutorialController(TutorialKeys keys) {
       ),
       TutorialStep(
         targetKey: keys.step3,
-        bubbleBuilder: (context) => const TutorialTextBubble(
+        bubbleBuilder: (context) => const TutorialTextContent(
           text: 'You navigated! The overlay spans multiple screens',
           textColor: Colors.white,
           fontSize: 16,
@@ -67,7 +67,7 @@ TutorialEngineController createTutorialController(TutorialKeys keys) {
       ),
       TutorialStep(
         targetKey: keys.step4,
-        bubbleBuilder: (context) => const TutorialTextBubble(
+        bubbleBuilder: (context) => const TutorialTextContent(
           text: 'Per-step override: arrow disabled for this step',
           textColor: Colors.white,
           fontSize: 16,
@@ -79,7 +79,7 @@ TutorialEngineController createTutorialController(TutorialKeys keys) {
       ),
       TutorialStep(
         targetKey: keys.step5,
-        bubbleBuilder: (context) => const TutorialTextBubble(
+        bubbleBuilder: (context) => const TutorialTextContent(
           text: 'Final step! Tap target or use Skip/Finish below',
           textColor: Colors.white,
           fontSize: 16,

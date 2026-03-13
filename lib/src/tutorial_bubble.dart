@@ -2,6 +2,12 @@
 
 import 'package:flutter/widgets.dart';
 
+/// Implemented by widgets that can provide bubble content without drawing
+/// their own outer bubble chrome.
+abstract class TutorialBubbleContent {
+  Widget buildBubbleContent(BuildContext context);
+}
+
 /// A simple bubble widget that wraps the given [child] with a
 /// configurable background.
 class TutorialBubble extends StatelessWidget {
@@ -259,7 +265,7 @@ class _TutorialBubbleBodyState extends State<_TutorialBubbleBody>
 ///
 /// This composes [TutorialBubble] and [Text] so callers can configure text
 /// appearance without building their own child tree.
-class TutorialTextBubble extends StatelessWidget {
+class TutorialTextBubble extends StatelessWidget implements TutorialBubbleContent {
   const TutorialTextBubble({
     super.key,
     required this.text,
@@ -302,31 +308,68 @@ class TutorialTextBubble extends StatelessWidget {
   /// When provided, this takes precedence over [backgroundColor].
   final Gradient? backgroundGradient;
 
+  /// Returns the text-only content used inside a bubble container.
+  TutorialTextContent toBubbleContent() {
+    return TutorialTextContent(
+      text: text,
+      textColor: textColor,
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fontWeight: fontWeight,
+      textStyle: textStyle,
+    );
+  }
+
+  @override
+  Widget buildBubbleContent(BuildContext context) => toBubbleContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return TutorialBubble(
+      backgroundColor: backgroundColor,
+      backgroundGradient: backgroundGradient,
+      child: toBubbleContent(),
+    );
+  }
+}
+
+/// Text-only bubble content for use inside [TutorialBubbleOverlay].
+class TutorialTextContent extends StatelessWidget {
+  const TutorialTextContent({
+    super.key,
+    required this.text,
+    this.textColor,
+    this.fontSize,
+    this.fontFamily,
+    this.fontWeight,
+    this.textStyle,
+  });
+
+  final String text;
+  final Color? textColor;
+  final double? fontSize;
+  final String? fontFamily;
+  final FontWeight? fontWeight;
+  final TextStyle? textStyle;
+
   @override
   Widget build(BuildContext context) {
     final baseStyle = DefaultTextStyle.of(context)
         .style
         .copyWith(decoration: TextDecoration.none);
 
-    TextStyle effectiveStyle;
-    if (textStyle != null) {
-      effectiveStyle = baseStyle.merge(textStyle);
-    } else {
-      effectiveStyle = baseStyle.copyWith(
-        color: textColor,
-        fontSize: fontSize,
-        fontFamily: fontFamily,
-        fontWeight: fontWeight,
-      );
-    }
+    final TextStyle effectiveStyle = textStyle != null
+        ? baseStyle.merge(textStyle)
+        : baseStyle.copyWith(
+            color: textColor,
+            fontSize: fontSize,
+            fontFamily: fontFamily,
+            fontWeight: fontWeight,
+          );
 
-    return TutorialBubble(
-      backgroundColor: backgroundColor,
-      backgroundGradient: backgroundGradient,
-      child: Text(
-        text,
-        style: effectiveStyle,
-      ),
+    return Text(
+      text,
+      style: effectiveStyle,
     );
   }
 }

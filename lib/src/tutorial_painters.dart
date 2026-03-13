@@ -3,16 +3,19 @@
 import 'package:flutter/widgets.dart';
 
 import 'enums.dart';
+import 'tutorial_highlight_shape.dart';
 
 /// Paints the dimming overlay with a cutout for the highlighted target.
 class TutorialOverlayPainter extends CustomPainter {
   TutorialOverlayPainter({
     required this.targetRect,
     required this.overlayColor,
+    this.highlightShape = const TutorialHighlightShape.rect(),
   });
 
   final Rect targetRect;
   final Color overlayColor;
+  final TutorialHighlightShape highlightShape;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -37,7 +40,7 @@ class TutorialOverlayPainter extends CustomPainter {
     if (right > left && bottom > top) {
       final Rect highlightRect = Rect.fromLTRB(left, top, right, bottom);
       final Paint clearPaint = Paint()..blendMode = BlendMode.clear;
-      canvas.drawRect(highlightRect, clearPaint);
+      canvas.drawPath(highlightShape.createPath(highlightRect), clearPaint);
     }
 
     canvas.restore();
@@ -46,7 +49,8 @@ class TutorialOverlayPainter extends CustomPainter {
   @override
   bool shouldRepaint(TutorialOverlayPainter oldDelegate) {
     return oldDelegate.targetRect != targetRect ||
-        oldDelegate.overlayColor != overlayColor;
+        oldDelegate.overlayColor != overlayColor ||
+        oldDelegate.highlightShape != highlightShape;
   }
 }
 
@@ -54,8 +58,10 @@ class TutorialOverlayPainter extends CustomPainter {
 class TutorialArrowPainter extends CustomPainter {
   TutorialArrowPainter({
     required this.targetRect,
+    required this.bubbleRect,
     required this.side,
     required this.color,
+    this.gradient,
     required this.strokeWidth,
     this.haloEnabled = false,
     this.haloColor,
@@ -64,8 +70,10 @@ class TutorialArrowPainter extends CustomPainter {
   });
 
   final Rect targetRect;
+  final Rect bubbleRect;
   final TutorialBubbleSide side;
   final Color color;
+  final Gradient? gradient;
   final double strokeWidth;
   final bool haloEnabled;
   final Color? haloColor;
@@ -98,6 +106,11 @@ class TutorialArrowPainter extends CustomPainter {
         fullDist > arrowHeadLength ? arrowHeadLength : fullDist * 0.5;
     final Offset direction = fullLine / fullDist;
     final Offset bodyEnd = tip - direction * clampedHeadLength;
+
+    if (gradient != null) {
+      final Rect shaderRect = Rect.fromPoints(fromBubble, tip).inflate(strokeWidth * 2);
+      arrowPaint.shader = gradient!.createShader(shaderRect);
+    }
 
     final Path path = Path()..moveTo(fromBubble.dx, fromBubble.dy);
 
@@ -197,26 +210,42 @@ class TutorialArrowPainter extends CustomPainter {
 
   /// Point on the bubble side (opposite the target) for the start of the arrow.
   Offset _bubbleSidePoint(TutorialBubbleSide side, Offset toTarget) {
-    const double bubbleOffset = 24;
     switch (side) {
       case TutorialBubbleSide.top:
-        return toTarget.translate(0, -bubbleOffset);
+        return Offset(
+          toTarget.dx.clamp(bubbleRect.left, bubbleRect.right),
+          bubbleRect.bottom,
+        );
       case TutorialBubbleSide.bottom:
-        return toTarget.translate(0, bubbleOffset);
+        return Offset(
+          toTarget.dx.clamp(bubbleRect.left, bubbleRect.right),
+          bubbleRect.top,
+        );
       case TutorialBubbleSide.left:
-        return toTarget.translate(-bubbleOffset, 0);
+        return Offset(
+          bubbleRect.right,
+          toTarget.dy.clamp(bubbleRect.top, bubbleRect.bottom),
+        );
       case TutorialBubbleSide.right:
-        return toTarget.translate(bubbleOffset, 0);
+        return Offset(
+          bubbleRect.left,
+          toTarget.dy.clamp(bubbleRect.top, bubbleRect.bottom),
+        );
       case TutorialBubbleSide.automatic:
-        return toTarget.translate(0, bubbleOffset);
+        return Offset(
+          toTarget.dx.clamp(bubbleRect.left, bubbleRect.right),
+          bubbleRect.top,
+        );
     }
   }
 
   @override
   bool shouldRepaint(TutorialArrowPainter oldDelegate) {
     return oldDelegate.targetRect != targetRect ||
+        oldDelegate.bubbleRect != bubbleRect ||
         oldDelegate.side != side ||
         oldDelegate.color != color ||
+        oldDelegate.gradient != gradient ||
         oldDelegate.strokeWidth != strokeWidth ||
         oldDelegate.haloEnabled != haloEnabled ||
         oldDelegate.haloColor != haloColor ||
@@ -234,6 +263,7 @@ class TutorialTargetHaloPainter extends CustomPainter {
     this.color,
     this.blurRadius = 16,
     this.strokeWidth = 4,
+    this.highlightShape = const TutorialHighlightShape.rect(),
   });
 
   final Rect targetRect;
@@ -241,6 +271,7 @@ class TutorialTargetHaloPainter extends CustomPainter {
   final Color? color;
   final double blurRadius;
   final double strokeWidth;
+  final TutorialHighlightShape highlightShape;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -249,10 +280,6 @@ class TutorialTargetHaloPainter extends CustomPainter {
     }
 
     final Rect haloRect = targetRect.inflate(6);
-    final RRect haloRRect = RRect.fromRectAndRadius(
-      haloRect,
-      const Radius.circular(14),
-    );
 
     final Color effectiveColor =
         (color ?? overlayColor).withValues(alpha: 0.7);
@@ -266,7 +293,7 @@ class TutorialTargetHaloPainter extends CustomPainter {
         blurRadius,
       );
 
-    canvas.drawRRect(haloRRect, haloPaint);
+    canvas.drawPath(highlightShape.createPath(haloRect), haloPaint);
   }
 
   @override
@@ -275,6 +302,7 @@ class TutorialTargetHaloPainter extends CustomPainter {
         oldDelegate.overlayColor != overlayColor ||
         oldDelegate.color != color ||
         oldDelegate.blurRadius != blurRadius ||
-        oldDelegate.strokeWidth != strokeWidth;
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.highlightShape != highlightShape;
   }
 }

@@ -3,6 +3,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'tutorial_highlight_shape.dart';
+
 /// Immutable configuration for visual parameters used by the tutorial engine.
 ///
 /// These values can be provided globally to [TutorialEngine] and optionally
@@ -14,10 +16,13 @@ class TutorialVisuals {
     this.bubbleBackgroundGradient,
     this.overlayColor,
     this.arrowEnabled,
+    this.arrowColor,
+    this.arrowGradient,
     this.bubbleHaloEnabled,
     this.bubbleHaloColor,
     this.targetHaloEnabled,
     this.targetHaloColor,
+    this.highlightShape,
     this.arrowHaloEnabled,
     this.arrowHaloColor,
     this.textStyle,
@@ -37,6 +42,12 @@ class TutorialVisuals {
   /// Whether the arrow connecting the bubble toward the target is visible.
   final bool? arrowEnabled;
 
+  /// Solid color used when drawing the arrow stroke.
+  final Color? arrowColor;
+
+  /// Gradient used when drawing the arrow stroke.
+  final Gradient? arrowGradient;
+
   /// Whether the bubble should render a halo/glow.
   final bool? bubbleHaloEnabled;
 
@@ -48,6 +59,9 @@ class TutorialVisuals {
 
   /// Optional color for the target halo.
   final Color? targetHaloColor;
+
+  /// Shape used for the highlighted target cutout and halo.
+  final TutorialHighlightShape? highlightShape;
 
   /// Whether the arrow should render a halo/glow.
   final bool? arrowHaloEnabled;
@@ -76,10 +90,13 @@ class TutorialVisuals {
           overrides.bubbleBackgroundGradient ?? bubbleBackgroundGradient,
       overlayColor: overrides.overlayColor ?? overlayColor,
       arrowEnabled: overrides.arrowEnabled ?? arrowEnabled,
+      arrowColor: overrides.arrowColor ?? arrowColor,
+      arrowGradient: overrides.arrowGradient ?? arrowGradient,
       bubbleHaloEnabled: overrides.bubbleHaloEnabled ?? bubbleHaloEnabled,
       bubbleHaloColor: overrides.bubbleHaloColor ?? bubbleHaloColor,
       targetHaloEnabled: overrides.targetHaloEnabled ?? targetHaloEnabled,
       targetHaloColor: overrides.targetHaloColor ?? targetHaloColor,
+      highlightShape: overrides.highlightShape ?? highlightShape,
       arrowHaloEnabled: overrides.arrowHaloEnabled ?? arrowHaloEnabled,
       arrowHaloColor: overrides.arrowHaloColor ?? arrowHaloColor,
       textStyle: overrides.textStyle ?? textStyle,

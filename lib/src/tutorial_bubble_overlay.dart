@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'enums.dart';
 import 'tutorial_bubble.dart';
+import 'tutorial_highlight_shape.dart';
 import 'tutorial_interaction.dart';
 import 'tutorial_painters.dart';
 
@@ -36,11 +37,13 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.onBackgroundTap,
     this.arrowEnabled = true,
     this.arrowColor = const Color(0xFFFFFFFF),
+    this.arrowGradient,
     this.arrowStrokeWidth = 2,
     this.arrowHaloEnabled = false,
     this.arrowHaloColor,
     this.arrowHaloBlurRadius = 8,
     this.arrowHaloStrokeWidthMultiplier = 2,
+    this.highlightShape = const TutorialHighlightShape.rect(),
   });
 
   /// Rectangle describing the target widget in this overlay's
@@ -145,6 +148,9 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// Color used when drawing the arrow stroke.
   final Color arrowColor;
 
+  /// Gradient used when drawing the arrow stroke.
+  final Gradient? arrowGradient;
+
   /// Stroke width used for the arrow path.
   final double arrowStrokeWidth;
 
@@ -167,6 +173,9 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// width.
   final double arrowHaloStrokeWidthMultiplier;
 
+  /// Shape used for the highlighted target region.
+  final TutorialHighlightShape highlightShape;
+
   /// Content inside the bubble.
   final Widget child;
 
@@ -178,6 +187,10 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
   /// Resolved side when [TutorialBubbleOverlay.preferredSide] is automatic;
   /// updated after layout so the arrow direction matches the bubble's side.
   TutorialBubbleSide? _resolvedSide;
+  final GlobalKey _stackKey = GlobalKey();
+  final GlobalKey _bubbleKey = GlobalKey();
+  Rect? _bubbleRect;
+  bool _bubbleRectMeasurementScheduled = false;
 
   void _onLayoutResolved(TutorialBubbleSide side) {
     if (!mounted) return;
@@ -186,23 +199,116 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
     }
   }
 
+  void _scheduleBubbleRectMeasurement() {
+    if (_bubbleRectMeasurementScheduled) {
+      return;
+    }
+
+    _bubbleRectMeasurementScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _bubbleRectMeasurementScheduled = false;
+      _updateBubbleRect();
+    });
+  }
+
+  void _updateBubbleRect() {
+    if (!mounted) {
+      return;
+    }
+
+    final stackContext = _stackKey.currentContext;
+    final bubbleContext = _bubbleKey.currentContext;
+    if (stackContext == null || bubbleContext == null) {
+      return;
+    }
+
+    final stackBox = stackContext.findRenderObject() as RenderBox?;
+    final bubbleBox = bubbleContext.findRenderObject() as RenderBox?;
+    if (stackBox == null || bubbleBox == null) {
+      return;
+    }
+
+    final Offset topLeft = bubbleBox.localToGlobal(
+      Offset.zero,
+      ancestor: stackBox,
+    );
+    final Rect nextBubbleRect = topLeft & bubbleBox.size;
+    if (_bubbleRect != nextBubbleRect) {
+      setState(() => _bubbleRect = nextBubbleRect);
+    }
+  }
+
+  Rect _fallbackBubbleRect(TutorialBubbleSide side) {
+    const double bubbleOffset = 24;
+    const double fallbackSize = 1;
+
+    switch (side) {
+      case TutorialBubbleSide.top:
+        return Rect.fromCenter(
+          center: widget.targetRect.topCenter.translate(0, -bubbleOffset),
+          width: fallbackSize,
+          height: fallbackSize,
+        );
+      case TutorialBubbleSide.bottom:
+        return Rect.fromCenter(
+          center: widget.targetRect.bottomCenter.translate(0, bubbleOffset),
+          width: fallbackSize,
+          height: fallbackSize,
+        );
+      case TutorialBubbleSide.left:
+        return Rect.fromCenter(
+          center: widget.targetRect.centerLeft.translate(-bubbleOffset, 0),
+          width: fallbackSize,
+          height: fallbackSize,
+        );
+      case TutorialBubbleSide.right:
+        return Rect.fromCenter(
+          center: widget.targetRect.centerRight.translate(bubbleOffset, 0),
+          width: fallbackSize,
+          height: fallbackSize,
+        );
+      case TutorialBubbleSide.automatic:
+        return Rect.fromCenter(
+          center: widget.targetRect.bottomCenter.translate(0, bubbleOffset),
+          width: fallbackSize,
+          height: fallbackSize,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _scheduleBubbleRectMeasurement();
+
     final effectiveArrowSide = widget.preferredSide == TutorialBubbleSide.automatic
         ? (_resolvedSide ?? TutorialBubbleSide.bottom)
         : widget.preferredSide;
+    final Widget bubbleChild = widget.child is TutorialBubbleContent
+        ? (widget.child as TutorialBubbleContent).buildBubbleContent(context)
+        : widget.child;
+    final Gradient? effectiveArrowGradient =
+        widget.arrowGradient ?? widget.backgroundGradient;
+    final Color effectiveArrowColor = widget.arrowGradient == null &&
+            widget.arrowColor == const Color(0xFFFFFFFF) &&
+            widget.backgroundColor != null
+        ? widget.backgroundColor!
+        : widget.arrowColor;
+    final Rect effectiveBubbleRect =
+        _bubbleRect ?? _fallbackBubbleRect(effectiveArrowSide);
 
     return Stack(
+      key: _stackKey,
       fit: StackFit.expand,
       children: [
         IgnorePointer(
           child: CustomPaint(
-            painter: TutorialOverlayPainter(
-              targetRect: widget.targetRect,
-              overlayColor: widget.overlayColor,
+              painter: TutorialOverlayPainter(
+                targetRect: widget.targetRect,
+                overlayColor: widget.overlayColor,
+                highlightShape: widget.highlightShape,
+              ),
             ),
           ),
-        ),
         if (widget.targetHaloEnabled)
           IgnorePointer(
             child: CustomPaint(
@@ -212,6 +318,7 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
                 color: widget.targetHaloColor,
                 blurRadius: widget.targetHaloBlurRadius,
                 strokeWidth: widget.targetHaloStrokeWidth,
+                highlightShape: widget.highlightShape,
               ),
             ),
           ),
@@ -220,6 +327,7 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
           enabled: widget.blockOutsideTarget,
           onTargetTap: widget.onTargetTap,
           onOutsideTap: widget.onBackgroundTap,
+          highlightShape: widget.highlightShape,
         ),
         CustomSingleChildLayout(
           delegate: _TutorialBubblePositionDelegate(
@@ -232,13 +340,14 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
                 : null,
           ),
           child: TutorialBubble(
+            key: _bubbleKey,
             backgroundColor: widget.backgroundColor,
             backgroundGradient: widget.backgroundGradient,
             haloEnabled: widget.bubbleHaloEnabled,
             haloColor: widget.bubbleHaloColor,
             haloBlurRadius: widget.bubbleHaloBlurRadius,
             haloSpreadRadius: widget.bubbleHaloSpreadRadius,
-            child: widget.child,
+            child: bubbleChild,
           ),
         ),
         if (widget.arrowEnabled)
@@ -246,8 +355,10 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
             child: CustomPaint(
               painter: TutorialArrowPainter(
                 targetRect: widget.targetRect,
+                bubbleRect: effectiveBubbleRect,
                 side: effectiveArrowSide,
-                color: widget.arrowColor,
+                color: effectiveArrowColor,
+                gradient: effectiveArrowGradient,
                 strokeWidth: widget.arrowStrokeWidth,
                 haloEnabled: widget.arrowHaloEnabled,
                 haloColor: widget.arrowHaloColor,

@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'enums.dart';
 import 'tutorial_bubble_overlay.dart';
 import 'tutorial_controller.dart';
+import 'tutorial_highlight_shape.dart';
 import 'tutorial_visuals.dart';
 
 /// Widget that renders a tutorial overlay for the current [TutorialStep].
@@ -300,9 +301,13 @@ class _TutorialEngineState extends State<TutorialEngine> {
                   backgroundGradient: visuals?.bubbleBackgroundGradient,
                   targetHaloEnabled: visuals?.targetHaloEnabled ?? false,
                   targetHaloColor: visuals?.targetHaloColor,
+                  highlightShape:
+                      visuals?.highlightShape ?? const TutorialHighlightShape.rect(),
                   bubbleHaloEnabled: visuals?.bubbleHaloEnabled ?? false,
                   bubbleHaloColor: visuals?.bubbleHaloColor,
                   arrowEnabled: visuals?.arrowEnabled ?? true,
+                  arrowColor: visuals?.arrowColor ?? const Color(0xFFFFFFFF),
+                  arrowGradient: visuals?.arrowGradient,
                   arrowHaloEnabled: visuals?.arrowHaloEnabled ?? false,
                   arrowHaloColor: visuals?.arrowHaloColor,
                   onBackgroundTap:

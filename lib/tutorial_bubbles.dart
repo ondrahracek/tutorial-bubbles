@@ -16,7 +16,7 @@
 //   steps: [
 //     TutorialStep(
 //       targetKey: myButtonKey,
-//       bubbleBuilder: (context) => TutorialTextBubble(
+//       bubbleBuilder: (context) => TutorialTextContent(
 //         text: 'Click this button to proceed',
 //       ),
 //     ),
@@ -37,3 +37,4 @@ export 'src/tutorial_bubble.dart';
 export 'src/tutorial_bubble_overlay.dart';
 export 'src/tutorial_controller.dart';
 export 'src/tutorial_engine.dart';
+export 'src/tutorial_highlight_shape.dart';

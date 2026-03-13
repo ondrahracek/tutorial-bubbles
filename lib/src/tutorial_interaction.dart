@@ -1,6 +1,9 @@
 // Interaction blocking widgets for tutorial overlays.
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter/rendering.dart';
+
+import 'tutorial_highlight_shape.dart';
 
 /// Widget that blocks interactions outside the highlighted target region.
 ///
@@ -12,12 +15,14 @@ class TutorialInteractionBlocker extends StatelessWidget {
     super.key,
     required this.targetRect,
     required this.enabled,
+    this.highlightShape = const TutorialHighlightShape.rect(),
     this.onTargetTap,
     this.onOutsideTap,
   });
 
   final Rect targetRect;
   final bool enabled;
+  final TutorialHighlightShape highlightShape;
   final VoidCallback? onTargetTap;
   final VoidCallback? onOutsideTap;
 
@@ -42,88 +47,154 @@ class TutorialInteractionBlocker extends StatelessWidget {
         final Rect clamped = Rect.fromLTRB(left, top, right, bottom);
 
         if (clamped.isEmpty) {
-          return _AbsorbingRegion(onTap: onOutsideTap);
+          return _ShapeInteractionBarrier(
+            targetRect: clamped,
+            highlightShape: highlightShape,
+            onTargetTap: onTargetTap,
+            onOutsideTap: onOutsideTap,
+          );
         }
 
-        return Stack(
-          children: [
-            Positioned(
-              left: 0,
-              top: 0,
-              right: 0,
-              height: clamped.top,
-              child: _AbsorbingRegion(onTap: onOutsideTap),
-            ),
-            Positioned(
-              left: 0,
-              top: clamped.bottom,
-              right: 0,
-              bottom: 0,
-              child: _AbsorbingRegion(onTap: onOutsideTap),
-            ),
-            Positioned(
-              left: 0,
-              top: clamped.top,
-              width: clamped.left,
-              height: clamped.height,
-              child: _AbsorbingRegion(onTap: onOutsideTap),
-            ),
-            Positioned(
-              left: clamped.right,
-              top: clamped.top,
-              right: 0,
-              height: clamped.height,
-              child: _AbsorbingRegion(onTap: onOutsideTap),
-            ),
-            if (onTargetTap != null)
-              Positioned(
-                left: clamped.left,
-                top: clamped.top,
-                width: clamped.width,
-                height: clamped.height,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onTargetTap,
-                  child: const SizedBox.expand(),
-                ),
-              ),
-          ],
+        return _ShapeInteractionBarrier(
+          targetRect: clamped,
+          highlightShape: highlightShape,
+          onTargetTap: onTargetTap,
+          onOutsideTap: onOutsideTap,
         );
       },
     );
   }
 }
 
-/// A region that absorbs pointer events or invokes a callback on tap.
-///
-/// When [onTap] is null, this widget absorbs all pointer events without
-/// propagating them. When [onTap] is provided, it forwards taps to the
-/// callback while still blocking propagation to underlying widgets.
-class _AbsorbingRegion extends StatelessWidget {
-  const _AbsorbingRegion({this.onTap});
+class _ShapeInteractionBarrier extends LeafRenderObjectWidget {
+  const _ShapeInteractionBarrier({
+    required this.targetRect,
+    required this.highlightShape,
+    this.onTargetTap,
+    this.onOutsideTap,
+  });
 
-  final VoidCallback? onTap;
+  final Rect targetRect;
+  final TutorialHighlightShape highlightShape;
+  final VoidCallback? onTargetTap;
+  final VoidCallback? onOutsideTap;
 
   @override
-  Widget build(BuildContext context) {
-    if (onTap == null) {
-      return const AbsorbPointer(
-        child: SizedBox.expand(
-          child: ColoredBox(
-            color: Color(0x00000000),
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: const SizedBox.expand(
-        child: ColoredBox(
-          color: Color(0x00000000),
-        ),
-      ),
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderShapeInteractionBarrier(
+      targetRect: targetRect,
+      highlightShape: highlightShape,
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      onTargetTap: onTargetTap,
+      onOutsideTap: onOutsideTap,
     );
   }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderShapeInteractionBarrier renderObject,
+  ) {
+    renderObject
+      ..targetRect = targetRect
+      ..highlightShape = highlightShape
+      ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr
+      ..onTargetTap = onTargetTap
+      ..onOutsideTap = onOutsideTap;
+  }
+}
+
+class _RenderShapeInteractionBarrier extends RenderBox {
+  _RenderShapeInteractionBarrier({
+    required Rect targetRect,
+    required TutorialHighlightShape highlightShape,
+    required TextDirection textDirection,
+    VoidCallback? onTargetTap,
+    VoidCallback? onOutsideTap,
+  })  : _targetRect = targetRect,
+        _highlightShape = highlightShape,
+        _textDirection = textDirection,
+        _onTargetTap = onTargetTap,
+        _onOutsideTap = onOutsideTap;
+
+  Rect _targetRect;
+  TutorialHighlightShape _highlightShape;
+  TextDirection _textDirection;
+  VoidCallback? _onTargetTap;
+  VoidCallback? _onOutsideTap;
+
+  set targetRect(Rect value) {
+    if (_targetRect == value) {
+      return;
+    }
+    _targetRect = value;
+    markNeedsPaint();
+  }
+
+  set highlightShape(TutorialHighlightShape value) {
+    if (_highlightShape == value) {
+      return;
+    }
+    _highlightShape = value;
+    markNeedsPaint();
+  }
+
+  set textDirection(TextDirection value) {
+    if (_textDirection == value) {
+      return;
+    }
+    _textDirection = value;
+    markNeedsPaint();
+  }
+
+  set onTargetTap(VoidCallback? value) {
+    _onTargetTap = value;
+  }
+
+  set onOutsideTap(VoidCallback? value) {
+    _onOutsideTap = value;
+  }
+
+  bool _isInsideTarget(Offset position) {
+    if (_targetRect.isEmpty) {
+      return false;
+    }
+    return _highlightShape.contains(
+      position,
+      _targetRect,
+      textDirection: _textDirection,
+    );
+  }
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
+  }
+
+  @override
+  bool hitTestSelf(Offset position) {
+    final bool insideTarget = _isInsideTarget(position);
+    if (insideTarget) {
+      return _onTargetTap != null;
+    }
+
+    return true;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
+    if (event is! PointerUpEvent) {
+      return;
+    }
+
+    final bool insideTarget = _isInsideTarget(event.localPosition);
+    if (insideTarget) {
+      _onTargetTap?.call();
+    } else {
+      _onOutsideTap?.call();
+    }
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {}
 }

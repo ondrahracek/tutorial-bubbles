@@ -8,12 +8,20 @@ void main() {
       bubbleBackgroundColor: Color(0xFF000000),
       overlayColor: Color(0x11000000),
       arrowEnabled: true,
+      arrowColor: Color(0xFF00FF00),
       bubbleHaloEnabled: false,
+      highlightShape: TutorialHighlightShape.rect(),
     );
 
     const overrides = TutorialVisuals(
       bubbleBackgroundColor: Color(0xFFFFFFFF),
       arrowEnabled: false,
+      arrowGradient: LinearGradient(
+        colors: <Color>[Color(0xFF42A5F5), Color(0xFFAB47BC)],
+      ),
+      highlightShape: TutorialHighlightShape.roundedRect(
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+      ),
     );
 
     final merged = base.merge(overrides);
@@ -21,7 +29,9 @@ void main() {
     expect(merged.bubbleBackgroundColor, const Color(0xFFFFFFFF));
     expect(merged.overlayColor, const Color(0x11000000));
     expect(merged.arrowEnabled, isFalse);
+    expect(merged.arrowColor, const Color(0xFF00FF00));
+    expect(merged.arrowGradient, overrides.arrowGradient);
     expect(merged.bubbleHaloEnabled, isFalse);
+    expect(merged.highlightShape, overrides.highlightShape);
   });
 }
-

@@ -63,13 +63,16 @@ class _StandaloneDemoPageState extends State<StandaloneDemoPage> {
                     preferredSide: TutorialBubbleSide.top,
                     bubbleHaloEnabled: true,
                     bubbleHaloColor: const Color(0x8042A5F5),
+                    highlightShape: const TutorialHighlightShape.roundedRect(
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                    ),
                     backgroundGradient: const LinearGradient(
                       colors: <Color>[
                         Color(0xFF42A5F5),
                         Color(0xFFAB47BC),
                       ],
                     ),
-                    child: const TutorialTextBubble(
+                    child: const TutorialTextContent(
                       text: 'Tap this button to get started',
                       textColor: Colors.white,
                       fontSize: 16,
