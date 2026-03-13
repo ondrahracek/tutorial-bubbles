@@ -9,7 +9,9 @@ void main() {
       overlayColor: Color(0x11000000),
       arrowEnabled: true,
       arrowColor: Color(0xFF00FF00),
+      arrowHeadLength: 9,
       bubbleHaloEnabled: false,
+      targetShineEnabled: false,
       highlightShape: TutorialHighlightShape.rect(),
     );
 
@@ -19,6 +21,9 @@ void main() {
       arrowGradient: LinearGradient(
         colors: <Color>[Color(0xFF42A5F5), Color(0xFFAB47BC)],
       ),
+      targetShineEnabled: true,
+      targetShineColor: Color(0x80FFFFFF),
+      targetShineBlurRadius: 22,
       highlightShape: TutorialHighlightShape.roundedRect(
         borderRadius: BorderRadius.all(Radius.circular(20)),
       ),
@@ -31,7 +36,11 @@ void main() {
     expect(merged.arrowEnabled, isFalse);
     expect(merged.arrowColor, const Color(0xFF00FF00));
     expect(merged.arrowGradient, overrides.arrowGradient);
+    expect(merged.arrowHeadLength, 9);
     expect(merged.bubbleHaloEnabled, isFalse);
+    expect(merged.targetShineEnabled, isTrue);
+    expect(merged.targetShineColor, const Color(0x80FFFFFF));
+    expect(merged.targetShineBlurRadius, 22);
     expect(merged.highlightShape, overrides.highlightShape);
   });
 }

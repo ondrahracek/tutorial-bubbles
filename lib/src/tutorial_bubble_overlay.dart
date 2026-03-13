@@ -23,11 +23,14 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.overlayColor = const Color(0xB3000000),
     this.backgroundColor,
     this.backgroundGradient,
-    this.padding = const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+    this.padding = const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
     this.targetHaloEnabled = false,
     this.targetHaloColor,
     this.targetHaloBlurRadius = 16,
     this.targetHaloStrokeWidth = 4,
+    this.targetShineEnabled = false,
+    this.targetShineColor,
+    this.targetShineBlurRadius = 18,
     this.bubbleHaloEnabled = false,
     this.bubbleHaloColor,
     this.bubbleHaloBlurRadius = 16,
@@ -38,7 +41,8 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.arrowEnabled = true,
     this.arrowColor = const Color(0xFFFFFFFF),
     this.arrowGradient,
-    this.arrowStrokeWidth = 2,
+    this.arrowStrokeWidth = 4,
+    this.arrowHeadLength = 10,
     this.arrowHaloEnabled = false,
     this.arrowHaloColor,
     this.arrowHaloBlurRadius = 8,
@@ -103,6 +107,15 @@ class TutorialBubbleOverlay extends StatefulWidget {
   /// Stroke width for the target halo glow.
   final double targetHaloStrokeWidth;
 
+  /// Whether to draw a soft interior shine over the highlighted target.
+  final bool targetShineEnabled;
+
+  /// Optional color for the target shine.
+  final Color? targetShineColor;
+
+  /// Blur radius for the target shine.
+  final double targetShineBlurRadius;
+
   /// Whether the bubble rendered by this overlay should draw a halo glow.
   final bool bubbleHaloEnabled;
 
@@ -153,6 +166,9 @@ class TutorialBubbleOverlay extends StatefulWidget {
 
   /// Stroke width used for the arrow path.
   final double arrowStrokeWidth;
+
+  /// Length of each arrowhead segment.
+  final double arrowHeadLength;
 
   /// Whether to draw a glow/halo around the arrow stroke.
   ///
@@ -322,6 +338,17 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
               ),
             ),
           ),
+        if (widget.targetShineEnabled)
+          IgnorePointer(
+            child: CustomPaint(
+              painter: TutorialTargetShinePainter(
+                targetRect: widget.targetRect,
+                color: widget.targetShineColor,
+                blurRadius: widget.targetShineBlurRadius,
+                highlightShape: widget.highlightShape,
+              ),
+            ),
+          ),
         TutorialInteractionBlocker(
           targetRect: widget.targetRect,
           enabled: widget.blockOutsideTarget,
@@ -360,6 +387,7 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
                 color: effectiveArrowColor,
                 gradient: effectiveArrowGradient,
                 strokeWidth: widget.arrowStrokeWidth,
+                arrowHeadLength: widget.arrowHeadLength,
                 haloEnabled: widget.arrowHaloEnabled,
                 haloColor: widget.arrowHaloColor,
                 haloBlurRadius: widget.arrowHaloBlurRadius,

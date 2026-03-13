@@ -226,6 +226,7 @@ void main() {
 
     const overlayColor = Color(0x66000000);
     const bubbleColor = Color(0xFF123456);
+    const shineColor = Color(0x80FFFFFF);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -235,7 +236,10 @@ void main() {
             overlayColor: overlayColor,
             bubbleBackgroundColor: bubbleColor,
             arrowEnabled: false,
+            arrowHeadLength: 12,
             bubbleHaloEnabled: true,
+            targetShineEnabled: true,
+            targetShineColor: shineColor,
           ),
           child: Center(
             child: ElevatedButton(
@@ -260,7 +264,10 @@ void main() {
     expect(overlay.overlayColor, overlayColor);
     expect(overlay.backgroundColor, bubbleColor);
     expect(overlay.arrowEnabled, isFalse);
+    expect(overlay.arrowHeadLength, 12);
     expect(overlay.bubbleHaloEnabled, isTrue);
+    expect(overlay.targetShineEnabled, isTrue);
+    expect(overlay.targetShineColor, shineColor);
   });
 
   testWidgets(

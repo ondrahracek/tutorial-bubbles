@@ -63,6 +63,13 @@ class _StandaloneDemoPageState extends State<StandaloneDemoPage> {
                     preferredSide: TutorialBubbleSide.top,
                     bubbleHaloEnabled: true,
                     bubbleHaloColor: const Color(0x8042A5F5),
+                    targetHaloEnabled: true,
+                    targetHaloColor: const Color(0xB3FFFFFF),
+                    targetHaloBlurRadius: 22,
+                    targetHaloStrokeWidth: 5,
+                    targetShineEnabled: true,
+                    targetShineColor: const Color(0x80FFFFFF),
+                    targetShineBlurRadius: 18,
                     highlightShape: const TutorialHighlightShape.roundedRect(
                       borderRadius: BorderRadius.all(Radius.circular(20)),
                     ),

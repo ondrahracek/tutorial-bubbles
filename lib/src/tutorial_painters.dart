@@ -63,6 +63,7 @@ class TutorialArrowPainter extends CustomPainter {
     required this.color,
     this.gradient,
     required this.strokeWidth,
+    this.arrowHeadLength = 10,
     this.haloEnabled = false,
     this.haloColor,
     this.haloBlurRadius = 8,
@@ -75,6 +76,7 @@ class TutorialArrowPainter extends CustomPainter {
   final Color color;
   final Gradient? gradient;
   final double strokeWidth;
+  final double arrowHeadLength;
   final bool haloEnabled;
   final Color? haloColor;
   final double haloBlurRadius;
@@ -97,8 +99,6 @@ class TutorialArrowPainter extends CustomPainter {
     if (fullDist == 0) {
       return;
     }
-
-    const double arrowHeadLength = 6;
 
     // Keep the arrow body and head entirely outside the target by ending the
     // curved body just before the tip on the target border.
@@ -247,6 +247,7 @@ class TutorialArrowPainter extends CustomPainter {
         oldDelegate.color != color ||
         oldDelegate.gradient != gradient ||
         oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.arrowHeadLength != arrowHeadLength ||
         oldDelegate.haloEnabled != haloEnabled ||
         oldDelegate.haloColor != haloColor ||
         oldDelegate.haloBlurRadius != haloBlurRadius ||
@@ -303,6 +304,45 @@ class TutorialTargetHaloPainter extends CustomPainter {
         oldDelegate.color != color ||
         oldDelegate.blurRadius != blurRadius ||
         oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.highlightShape != highlightShape;
+  }
+}
+
+/// Painter that draws a soft white-ish glow inside the highlighted target.
+class TutorialTargetShinePainter extends CustomPainter {
+  TutorialTargetShinePainter({
+    required this.targetRect,
+    this.color,
+    this.blurRadius = 18,
+    this.highlightShape = const TutorialHighlightShape.rect(),
+  });
+
+  final Rect targetRect;
+  final Color? color;
+  final double blurRadius;
+  final TutorialHighlightShape highlightShape;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (targetRect.isEmpty) {
+      return;
+    }
+
+    final Path targetPath = highlightShape.createPath(targetRect);
+    final Color effectiveColor = color ?? const Color(0xCCFFFFFF);
+    final Paint shinePaint = Paint()
+      ..color = effectiveColor.withValues(alpha: effectiveColor.a * 0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..maskFilter = MaskFilter.blur(BlurStyle.outer, blurRadius);
+    canvas.drawPath(targetPath, shinePaint);
+  }
+
+  @override
+  bool shouldRepaint(TutorialTargetShinePainter oldDelegate) {
+    return oldDelegate.targetRect != targetRect ||
+        oldDelegate.color != color ||
+        oldDelegate.blurRadius != blurRadius ||
         oldDelegate.highlightShape != highlightShape;
   }
 }

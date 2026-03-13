@@ -301,6 +301,9 @@ class _TutorialEngineState extends State<TutorialEngine> {
                   backgroundGradient: visuals?.bubbleBackgroundGradient,
                   targetHaloEnabled: visuals?.targetHaloEnabled ?? false,
                   targetHaloColor: visuals?.targetHaloColor,
+                  targetShineEnabled: visuals?.targetShineEnabled ?? false,
+                  targetShineColor: visuals?.targetShineColor,
+                  targetShineBlurRadius: visuals?.targetShineBlurRadius ?? 18,
                   highlightShape:
                       visuals?.highlightShape ?? const TutorialHighlightShape.rect(),
                   bubbleHaloEnabled: visuals?.bubbleHaloEnabled ?? false,
@@ -308,6 +311,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
                   arrowEnabled: visuals?.arrowEnabled ?? true,
                   arrowColor: visuals?.arrowColor ?? const Color(0xFFFFFFFF),
                   arrowGradient: visuals?.arrowGradient,
+                  arrowHeadLength: visuals?.arrowHeadLength ?? 10,
                   arrowHaloEnabled: visuals?.arrowHaloEnabled ?? false,
                   arrowHaloColor: visuals?.arrowHaloColor,
                   onBackgroundTap:

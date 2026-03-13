@@ -18,10 +18,14 @@ class TutorialVisuals {
     this.arrowEnabled,
     this.arrowColor,
     this.arrowGradient,
+    this.arrowHeadLength,
     this.bubbleHaloEnabled,
     this.bubbleHaloColor,
     this.targetHaloEnabled,
     this.targetHaloColor,
+    this.targetShineEnabled,
+    this.targetShineColor,
+    this.targetShineBlurRadius,
     this.highlightShape,
     this.arrowHaloEnabled,
     this.arrowHaloColor,
@@ -48,6 +52,9 @@ class TutorialVisuals {
   /// Gradient used when drawing the arrow stroke.
   final Gradient? arrowGradient;
 
+  /// Length of each arrowhead segment.
+  final double? arrowHeadLength;
+
   /// Whether the bubble should render a halo/glow.
   final bool? bubbleHaloEnabled;
 
@@ -59,6 +66,15 @@ class TutorialVisuals {
 
   /// Optional color for the target halo.
   final Color? targetHaloColor;
+
+  /// Whether the target should render an interior shine.
+  final bool? targetShineEnabled;
+
+  /// Optional color for the target shine.
+  final Color? targetShineColor;
+
+  /// Blur radius for the target shine.
+  final double? targetShineBlurRadius;
 
   /// Shape used for the highlighted target cutout and halo.
   final TutorialHighlightShape? highlightShape;
@@ -92,10 +108,15 @@ class TutorialVisuals {
       arrowEnabled: overrides.arrowEnabled ?? arrowEnabled,
       arrowColor: overrides.arrowColor ?? arrowColor,
       arrowGradient: overrides.arrowGradient ?? arrowGradient,
+      arrowHeadLength: overrides.arrowHeadLength ?? arrowHeadLength,
       bubbleHaloEnabled: overrides.bubbleHaloEnabled ?? bubbleHaloEnabled,
       bubbleHaloColor: overrides.bubbleHaloColor ?? bubbleHaloColor,
       targetHaloEnabled: overrides.targetHaloEnabled ?? targetHaloEnabled,
       targetHaloColor: overrides.targetHaloColor ?? targetHaloColor,
+      targetShineEnabled: overrides.targetShineEnabled ?? targetShineEnabled,
+      targetShineColor: overrides.targetShineColor ?? targetShineColor,
+      targetShineBlurRadius:
+          overrides.targetShineBlurRadius ?? targetShineBlurRadius,
       highlightShape: overrides.highlightShape ?? highlightShape,
       arrowHaloEnabled: overrides.arrowHaloEnabled ?? arrowHaloEnabled,
       arrowHaloColor: overrides.arrowHaloColor ?? arrowHaloColor,

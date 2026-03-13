@@ -186,6 +186,44 @@ void main() {
   });
 
   testWidgets(
+      'TutorialBubbleOverlay can enable a shine over the target with configurable color and blur',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+    const shineColor = Color(0x80FFFFFF);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            targetShineEnabled: true,
+            targetShineColor: shineColor,
+            targetShineBlurRadius: 20,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+
+    final shinePaints = customPaints
+        .where((p) => p.painter is TutorialTargetShinePainter)
+        .toList();
+
+    expect(shinePaints, isNotEmpty);
+
+    final shinePainter =
+        shinePaints.first.painter! as TutorialTargetShinePainter;
+    expect(shinePainter.color, shineColor);
+    expect(shinePainter.blurRadius, 20);
+  });
+
+  testWidgets(
       'Target halo is painted above the dark overlay so it appears over the dimmed background',
       (tester) async {
     const targetRect = Rect.fromLTWH(100, 100, 40, 40);
@@ -273,6 +311,64 @@ void main() {
     final arrowPainter =
         arrowPaints.first.painter! as TutorialArrowPainter;
     expect(arrowPainter.strokeWidth, 6);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay uses stronger default arrow stroke width and arrow head length',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+    final arrowPainter = customPaints
+        .firstWhere((p) => p.painter is TutorialArrowPainter)
+        .painter! as TutorialArrowPainter;
+
+    expect(arrowPainter.strokeWidth, 4);
+    expect(arrowPainter.arrowHeadLength, 10);
+  });
+
+  testWidgets(
+      'TutorialBubbleOverlay arrow head length is configurable',
+      (tester) async {
+    const targetRect = Rect.fromLTWH(100, 100, 40, 40);
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: SizedBox.expand(
+          child: TutorialBubbleOverlay(
+            targetRect: targetRect,
+            preferredSide: TutorialBubbleSide.top,
+            arrowHeadLength: 14,
+            child: SizedBox(width: 10, height: 10),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final customPaints =
+        tester.widgetList<CustomPaint>(find.byType(CustomPaint)).toList();
+    final arrowPainter = customPaints
+        .firstWhere((p) => p.painter is TutorialArrowPainter)
+        .painter! as TutorialArrowPainter;
+
+    expect(arrowPainter.arrowHeadLength, 14);
   });
 
   testWidgets(
