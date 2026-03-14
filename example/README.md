@@ -1,16 +1,40 @@
 # tutorial_bubbles_example
 
-A new Flutter project.
+Example app for the `tutorial_bubbles` package.
 
-## Getting Started
+## What it demonstrates
 
-This project is a starting point for a Flutter application.
+- `Standalone spotlight` shows manual `Rect` measurement with `TutorialBubbleOverlay`
+- `Feature tour` shows the engine-driven flow with:
+  - `TutorialTarget.key(...)`
+  - `TutorialTarget.rect(...)`
+  - `beforeShow`
+  - per-step `preferredSide`
+  - per-step `TutorialStepBehavior`
+  - cross-screen navigation
+  - `TutorialPersistence`
+- `Reset tutorial persistence` clears saved progress and the completed flag
 
-A few resources to get you started if this is your first Flutter project:
+## Run the example
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Run the example tests
+
+```bash
+flutter test
+```
+
+## Manual visual QA checklist
+
+- Launch `Standalone spotlight` and verify the bubble updates when changing side, shape, and roundness
+- Launch `Feature tour` and verify:
+  - the first step highlights the welcome button
+  - the scroll chip step animates into view before the bubble appears
+  - the synthetic summary band highlights a painted region instead of a child widget
+  - the details navigation step follows the route transition
+  - the blocked-target step prevents target activation while the background control still works
+  - the final step can complete the tutorial and suppress it on the next launch until reset
