@@ -59,6 +59,12 @@ enum TutorialSaveStrategy {
   manual,
 }
 
+enum TutorialCompletionPersistencePolicy {
+  completedOnly,
+  completedOrSkipped,
+  always,
+}
+
 class TutorialPersistence {
   const TutorialPersistence({
     required this.id,
@@ -66,6 +72,8 @@ class TutorialPersistence {
     this.checkpoints,
     this.clearOnComplete = true,
     this.completedKey,
+    this.completionPersistencePolicy =
+        TutorialCompletionPersistencePolicy.completedOnly,
   });
 
   final String id;
@@ -73,6 +81,7 @@ class TutorialPersistence {
   final Set<int>? checkpoints;
   final bool clearOnComplete;
   final String? completedKey;
+  final TutorialCompletionPersistencePolicy completionPersistencePolicy;
 
   String get effectiveCompletedKey => completedKey ?? '${id}_completed';
 }

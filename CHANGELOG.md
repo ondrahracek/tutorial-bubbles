@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Add `TutorialCompletionPersistencePolicy` so apps can control whether `skip()` and `finish()` permanently suppress a tutorial.
+- Keep `completedOnly` as the default behavior for backward compatibility.
+
 ## 0.1.0
 
 - Add `TutorialTarget` with `key` and `rect` target support for virtual or painted tutorial regions.

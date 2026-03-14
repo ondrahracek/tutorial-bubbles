@@ -332,16 +332,35 @@ class _TutorialEngineState extends State<TutorialEngine> {
 
   void _writeCompletedFlagIfNeeded() {
     final persistence = _effectivePersistence;
-    if (persistence == null) {
+    final reason = _controller.lastCompletionReason;
+    if (persistence == null || reason == null) {
       return;
     }
-    if (_controller.lastCompletionReason ==
-        TutorialCompletionReason.completed) {
+
+    if (_shouldPersistCompletedFlag(
+      reason,
+      persistence.completionPersistencePolicy,
+    )) {
       _isPersistedCompleted = true;
       unawaited(TutorialProgressStorage.writeCompleted(
         persistence.effectiveCompletedKey,
         true,
       ));
+    }
+  }
+
+  bool _shouldPersistCompletedFlag(
+    TutorialCompletionReason reason,
+    TutorialCompletionPersistencePolicy policy,
+  ) {
+    switch (policy) {
+      case TutorialCompletionPersistencePolicy.completedOnly:
+        return reason == TutorialCompletionReason.completed;
+      case TutorialCompletionPersistencePolicy.completedOrSkipped:
+        return reason == TutorialCompletionReason.completed ||
+            reason == TutorialCompletionReason.skipped;
+      case TutorialCompletionPersistencePolicy.always:
+        return true;
     }
   }
 

@@ -8,5 +8,14 @@ void main() {
 
       expect(persistence.effectiveCompletedKey, 'dashboard_tutorial_completed');
     });
+
+    test('defaults completionPersistencePolicy to completedOnly', () {
+      const persistence = TutorialPersistence(id: 'dashboard_tutorial');
+
+      expect(
+        persistence.completionPersistencePolicy,
+        TutorialCompletionPersistencePolicy.completedOnly,
+      );
+    });
   });
 }

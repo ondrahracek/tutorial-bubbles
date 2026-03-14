@@ -490,4 +490,296 @@ void main() {
 
     expect(find.byType(TutorialBubbleOverlay), findsNothing);
   });
+
+  testWidgets(
+      'completionPersistencePolicy completedOnly does not mark skipped tutorials completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'skip-completed-only',
+      completionPersistencePolicy:
+          TutorialCompletionPersistencePolicy.completedOnly,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.skip();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isFalse,
+    );
+  });
+
+  testWidgets(
+      'completionPersistencePolicy completedOnly does not mark finished tutorials completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'finish-completed-only',
+      completionPersistencePolicy:
+          TutorialCompletionPersistencePolicy.completedOnly,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.finish();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isFalse,
+    );
+  });
+
+  testWidgets(
+      'completionPersistencePolicy completedOrSkipped marks skipped tutorials completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'skip-completed-or-skipped',
+      completionPersistencePolicy:
+          TutorialCompletionPersistencePolicy.completedOrSkipped,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.skip();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isTrue,
+    );
+  });
+
+  testWidgets(
+      'completionPersistencePolicy always marks finished tutorials completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'finish-always',
+      completionPersistencePolicy: TutorialCompletionPersistencePolicy.always,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.finish();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isTrue,
+    );
+  });
+
+  testWidgets(
+      'completionPersistencePolicy completedOrSkipped does not mark finished tutorials completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'finish-completed-or-skipped',
+      completionPersistencePolicy:
+          TutorialCompletionPersistencePolicy.completedOrSkipped,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.finish();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isFalse,
+    );
+  });
+
+  testWidgets(
+      'completionPersistencePolicy always marks skipped tutorials completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'skip-always',
+      completionPersistencePolicy: TutorialCompletionPersistencePolicy.always,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Only step'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.skip();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isTrue,
+    );
+  });
 }

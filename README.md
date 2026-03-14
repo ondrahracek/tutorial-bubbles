@@ -593,10 +593,18 @@ TutorialEngine(
   persistence: const TutorialPersistence(
     id: 'main_onboarding',
     clearOnComplete: true,
+    completionPersistencePolicy:
+        TutorialCompletionPersistencePolicy.completedOrSkipped,
   ),
   child: child,
 )
 ```
+
+Completion persistence policies:
+
+- `completedOnly` - only advancing through the final step suppresses the tutorial forever
+- `completedOrSkipped` - finishing normally or calling `skip()` suppresses the tutorial forever
+- `always` - `completed`, `skip()`, and `finish()` all suppress the tutorial forever
 
 ## Works across screens
 
