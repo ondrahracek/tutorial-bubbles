@@ -15,7 +15,7 @@
 // final controller = TutorialEngineController(
 //   steps: [
 //     TutorialStep(
-//       targetKey: myButtonKey,
+//       target: TutorialTarget.key(myButtonKey),
 //       bubbleBuilder: (context) => TutorialTextContent(
 //         text: 'Click this button to proceed',
 //       ),
@@ -32,6 +32,7 @@
 library tutorial_bubbles;
 
 export 'src/enums.dart';
+export 'src/tutorial_models.dart';
 export 'src/tutorial_visuals.dart';
 export 'src/tutorial_bubble.dart';
 export 'src/tutorial_bubble_overlay.dart';

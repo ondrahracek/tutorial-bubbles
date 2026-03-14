@@ -14,6 +14,7 @@ class TutorialVisuals {
   const TutorialVisuals({
     this.bubbleBackgroundColor,
     this.bubbleBackgroundGradient,
+    this.bubbleCornerRadius,
     this.overlayColor,
     this.arrowEnabled,
     this.arrowColor,
@@ -39,6 +40,9 @@ class TutorialVisuals {
   ///
   /// When provided, this takes precedence over [bubbleBackgroundColor].
   final Gradient? bubbleBackgroundGradient;
+
+  /// Corner radius applied to the rendered tutorial bubble.
+  final double? bubbleCornerRadius;
 
   /// Color of the dimmed overlay that surrounds the target and bubble.
   final Color? overlayColor;
@@ -104,6 +108,7 @@ class TutorialVisuals {
           overrides.bubbleBackgroundColor ?? bubbleBackgroundColor,
       bubbleBackgroundGradient:
           overrides.bubbleBackgroundGradient ?? bubbleBackgroundGradient,
+      bubbleCornerRadius: overrides.bubbleCornerRadius ?? bubbleCornerRadius,
       overlayColor: overrides.overlayColor ?? overlayColor,
       arrowEnabled: overrides.arrowEnabled ?? arrowEnabled,
       arrowColor: overrides.arrowColor ?? arrowColor,
@@ -135,8 +140,7 @@ class TutorialProgressStorage {
 
   static const String _keyPrefix = 'tutorial_bubbles_progress_';
 
-  static String _storageKey(String tutorialId) =>
-      '$_keyPrefix$tutorialId';
+  static String _storageKey(String tutorialId) => '$_keyPrefix$tutorialId';
 
   /// Reads the persisted zero-based step index for the given [tutorialId].
   ///
@@ -157,32 +161,19 @@ class TutorialProgressStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey(tutorialId));
   }
-}
 
-/// Immutable description of a single tutorial step.
-///
-/// Each step identifies a target widget by [targetKey] and provides
-/// [bubbleBuilder] to build the bubble content for that step. Visual
-/// parameters can optionally be customized per-step via [visuals].
-class TutorialStep {
-  const TutorialStep({
-    required this.targetKey,
-    required this.bubbleBuilder,
-    this.visuals,
-  });
+  static Future<bool> readCompleted(String completedKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_storageKey(completedKey)) ?? false;
+  }
 
-  /// Key of the widget that should be highlighted for this step.
-  ///
-  /// The engine uses this key to locate the widget and compute its
-  /// layout rectangle for the bubble and overlay.
-  final GlobalKey targetKey;
+  static Future<void> writeCompleted(String completedKey, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_storageKey(completedKey), value);
+  }
 
-  /// Builder used to create the bubble contents for this step.
-  final WidgetBuilder bubbleBuilder;
-
-  /// Optional per-step overrides for visual parameters.
-  ///
-  /// When provided together with [TutorialEngine.globalVisuals], any
-  /// non-null fields here override the corresponding global defaults.
-  final TutorialVisuals? visuals;
+  static Future<void> clearCompleted(String completedKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey(completedKey));
+  }
 }

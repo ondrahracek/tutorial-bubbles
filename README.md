@@ -2,23 +2,25 @@
 
 Add guided tutorial bubbles and spotlights to Flutter apps.
 
-`tutorial_bubbles` helps you highlight any widget, point to it with a bubble, and build onboarding flows without rewriting your UI.
+`tutorial_bubbles` helps you highlight widgets or virtual screen regions, point to them with a bubble, and build onboarding flows without rewriting your UI.
 
 ## Why use it
 
-- Highlight any widget with a `GlobalKey`
+- Highlight keyed widgets or virtual `Rect` targets
 - Show a one-off spotlight or a full multi-step tutorial
 - Use solid or gradient bubbles
 - Add arrow, glow, and target highlight effects
 - Support rounded or oval targets
 - Continue tutorials across screens
-- Save and resume progress
+- Save, resume, and mark tutorials complete
+- Prepare steps asynchronously before measuring targets
+- Override behavior and placement per step
 
 ## Installation
 
 ```yaml
 dependencies:
-  tutorial_bubbles: ^0.0.1
+  tutorial_bubbles: ^0.1.0
 ```
 
 Then run:
@@ -151,14 +153,23 @@ class _TutorialExampleState extends State<TutorialExample> {
   late final TutorialEngineController _controller = TutorialEngineController(
     steps: [
       TutorialStep(
-        targetKey: _firstKey,
+        target: TutorialTarget.key(_firstKey),
+        id: 'first_action',
         bubbleBuilder: (context) => const TutorialTextContent(
           text: 'Tap here first',
           textColor: Colors.white,
         ),
       ),
       TutorialStep(
-        targetKey: _secondKey,
+        target: TutorialTarget.key(_secondKey),
+        id: 'second_action',
+        preferredSide: TutorialBubbleSide.top,
+        beforeShow: (context, controller) async {
+          await Scrollable.ensureVisible(_secondKey.currentContext!);
+        },
+        behavior: const TutorialStepBehavior(
+          advanceOnBubbleTap: true,
+        ),
         bubbleBuilder: (context) => const TutorialTextContent(
           text: 'Now look at this action',
           textColor: Colors.white,
@@ -182,7 +193,7 @@ class _TutorialExampleState extends State<TutorialExample> {
   Widget build(BuildContext context) {
     return TutorialEngine(
       controller: _controller,
-      advanceOnBubbleTap: true,
+      persistence: const TutorialPersistence(id: 'tutorial_example'),
       onComplete: (reason) {
         debugPrint('Tutorial finished: $reason');
       },
@@ -214,12 +225,30 @@ class _TutorialExampleState extends State<TutorialExample> {
 }
 ```
 
+### Virtual or painted targets
+
+Use `TutorialTarget.rect(...)` when the tutorial should point to a synthetic area instead of a keyed widget.
+
+```dart
+TutorialStep(
+  id: 'chart_hotspot',
+  target: TutorialTarget.rect((context) {
+    return const Rect.fromLTWH(120, 220, 160, 72);
+  }),
+  preferredSide: TutorialBubbleSide.bottom,
+  bubbleBuilder: (context) => const TutorialTextContent(
+    text: 'This summary band is painted directly on the chart.',
+  ),
+)
+```
+
 ## Common customization
 
 ### Bubble look
 
 ```dart
 const TutorialVisuals(
+  bubbleCornerRadius: 24,
   bubbleBackgroundGradient: LinearGradient(
     colors: <Color>[Color(0xFF42A5F5), Color(0xFFAB47BC)],
   ),
@@ -292,6 +321,39 @@ TutorialEngine(
 )
 ```
 
+### Step preparation with `beforeShow`
+
+```dart
+TutorialStep(
+  target: TutorialTarget.key(filterChipKey),
+  beforeShow: (context, controller) async {
+    await Scrollable.ensureVisible(filterChipKey.currentContext!);
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+  },
+  bubbleBuilder: (context) => const TutorialTextContent(
+    text: 'This chip may start offscreen, so we scroll first.',
+  ),
+)
+```
+
+### Per-step interaction policy
+
+```dart
+TutorialStep(
+  target: TutorialTarget.key(profileButtonKey),
+  behavior: TutorialStepBehavior(
+    allowTargetTap: false,
+    blockOutsideTarget: true,
+    onOverlayTap: (context) {
+      debugPrint('Overlay tapped');
+    },
+  ),
+  bubbleBuilder: (context) => const TutorialTextContent(
+    text: 'Only the bubble should advance this step.',
+  ),
+)
+```
+
 ## Main API
 
 ### `TutorialBubbleOverlay`
@@ -306,8 +368,10 @@ Most important options:
 - `overlayColor`
 - `backgroundColor`
 - `backgroundGradient`
+- `bubbleCornerRadius`
 - `padding`
 - `highlightShape`
+- `allowTargetTap`
 - `targetHaloEnabled`
 - `targetShineEnabled`
 - `arrowEnabled`
@@ -325,11 +389,13 @@ Main options:
 
 - `controller`
 - `child`
+- `persistence`
 - `advanceOnBubbleTap`
 - `advanceOnOverlayTap`
 - `globalVisuals`
 - `persistenceId`
 - `checkpointSteps`
+- `persistence`
 - `onComplete`
 
 ### `TutorialEngineController`
@@ -349,9 +415,41 @@ Main methods:
 
 Defines a single step.
 
-- `targetKey`
+- `target`
 - `bubbleBuilder`
 - `visuals`
+- `beforeShow`
+- `preferredSide`
+- `behavior`
+- `id`
+
+### `TutorialTarget`
+
+Target types:
+
+- `TutorialTarget.key(GlobalKey)`
+- `TutorialTarget.rect((context) => Rect)`
+
+### `TutorialStepBehavior`
+
+Behavior fields:
+
+- `advanceOnBubbleTap`
+- `advanceOnOverlayTap`
+- `allowTargetTap`
+- `blockOutsideTarget`
+- `onTargetTap`
+- `onOverlayTap`
+
+### `TutorialPersistence`
+
+Persistence fields:
+
+- `id`
+- `saveStrategy`
+- `checkpoints`
+- `clearOnComplete`
+- `completedKey`
 
 ### `TutorialVisuals`
 
@@ -361,6 +459,7 @@ Common fields:
 
 - `bubbleBackgroundColor`
 - `bubbleBackgroundGradient`
+- `bubbleCornerRadius`
 - `overlayColor`
 - `arrowEnabled`
 - `arrowColor`
@@ -406,8 +505,8 @@ TutorialBubbleOverlay(
 
 In engine mode:
 
-- `advanceOnBubbleTap: true` advances when the bubble is tapped
-- `advanceOnOverlayTap: true` advances when the dimmed background is tapped
+- engine-level `advanceOnBubbleTap` and `advanceOnOverlayTap` still work
+- per-step behavior overrides are available through `TutorialStep.behavior`
 
 ## Persistence
 
@@ -418,7 +517,9 @@ Save on every step change:
 ```dart
 TutorialEngine(
   controller: controller,
-  persistenceId: 'main_onboarding',
+  persistence: const TutorialPersistence(
+    id: 'main_onboarding',
+  ),
   child: child,
 )
 ```
@@ -428,8 +529,24 @@ Save only at selected checkpoints:
 ```dart
 TutorialEngine(
   controller: controller,
-  persistenceId: 'main_onboarding',
-  checkpointSteps: {0, 2, 4},
+  persistence: const TutorialPersistence(
+    id: 'main_onboarding',
+    saveStrategy: TutorialSaveStrategy.checkpointsOnly,
+    checkpoints: {0, 2, 4},
+  ),
+  child: child,
+)
+```
+
+Mark a tutorial completed forever while still keeping resume separate from completion:
+
+```dart
+TutorialEngine(
+  controller: controller,
+  persistence: const TutorialPersistence(
+    id: 'main_onboarding',
+    clearOnComplete: true,
+  ),
   child: child,
 )
 ```
@@ -456,10 +573,11 @@ MaterialApp(
 - Use `TutorialHighlightShape.roundedRect(...)` for rounded buttons and cards
 - Use `TutorialBubbleSide.automatic` when you want the package to choose the best side
 - Put shared styling in `globalVisuals`, then override only special steps
+- Use `beforeShow` for scrolling, navigation settling, and delayed layouts
 
 ## Notes
 
-- The package targets widgets by layout using `GlobalKey`
+- The package can target widgets by `GlobalKey` or authored `Rect` resolvers
 - It works well with buttons, text, icons, cards, and custom widgets
 - Some widgets may paint shadows outside their visible bounds; use highlight shape and glow settings to get the cleanest result for your UI
 

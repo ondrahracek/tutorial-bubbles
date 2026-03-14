@@ -35,6 +35,8 @@ class TutorialBubbleOverlay extends StatefulWidget {
     this.bubbleHaloColor,
     this.bubbleHaloBlurRadius = 16,
     this.bubbleHaloSpreadRadius = 2,
+    this.bubbleCornerRadius = 12,
+    this.allowTargetTap = true,
     this.blockOutsideTarget = true,
     this.onTargetTap,
     this.onBackgroundTap,
@@ -127,6 +129,12 @@ class TutorialBubbleOverlay extends StatefulWidget {
 
   /// Spread radius for the bubble halo glow.
   final double bubbleHaloSpreadRadius;
+
+  /// Corner radius applied to the rendered bubble.
+  final double bubbleCornerRadius;
+
+  /// Whether the highlighted target region should remain interactive.
+  final bool allowTargetTap;
 
   /// Whether interactions outside the highlighted [targetRect] should be
   /// blocked while this overlay is active.
@@ -296,9 +304,10 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
   Widget build(BuildContext context) {
     _scheduleBubbleRectMeasurement();
 
-    final effectiveArrowSide = widget.preferredSide == TutorialBubbleSide.automatic
-        ? (_resolvedSide ?? TutorialBubbleSide.bottom)
-        : widget.preferredSide;
+    final effectiveArrowSide =
+        widget.preferredSide == TutorialBubbleSide.automatic
+            ? (_resolvedSide ?? TutorialBubbleSide.bottom)
+            : widget.preferredSide;
     final Widget bubbleChild = widget.child is TutorialBubbleContent
         ? (widget.child as TutorialBubbleContent).buildBubbleContent(context)
         : widget.child;
@@ -318,13 +327,13 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
       children: [
         IgnorePointer(
           child: CustomPaint(
-              painter: TutorialOverlayPainter(
-                targetRect: widget.targetRect,
-                overlayColor: widget.overlayColor,
-                highlightShape: widget.highlightShape,
-              ),
+            painter: TutorialOverlayPainter(
+              targetRect: widget.targetRect,
+              overlayColor: widget.overlayColor,
+              highlightShape: widget.highlightShape,
             ),
           ),
+        ),
         if (widget.targetHaloEnabled)
           IgnorePointer(
             child: CustomPaint(
@@ -351,7 +360,12 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
           ),
         TutorialInteractionBlocker(
           targetRect: widget.targetRect,
-          enabled: widget.blockOutsideTarget,
+          enabled: widget.blockOutsideTarget ||
+              !widget.allowTargetTap ||
+              widget.onTargetTap != null ||
+              widget.onBackgroundTap != null,
+          allowTargetTap: widget.allowTargetTap,
+          blockOutsideTarget: widget.blockOutsideTarget,
           onTargetTap: widget.onTargetTap,
           onOutsideTap: widget.onBackgroundTap,
           highlightShape: widget.highlightShape,
@@ -374,6 +388,7 @@ class _TutorialBubbleOverlayState extends State<TutorialBubbleOverlay> {
             haloColor: widget.bubbleHaloColor,
             haloBlurRadius: widget.bubbleHaloBlurRadius,
             haloSpreadRadius: widget.bubbleHaloSpreadRadius,
+            cornerRadius: widget.bubbleCornerRadius,
             child: bubbleChild,
           ),
         ),
@@ -438,15 +453,14 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
       TutorialBubbleSide.right: right,
     };
 
-    return candidates.entries
-        .reduce((a, b) => a.value >= b.value ? a : b)
-        .key;
+    return candidates.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     final side = _resolveSide(size, childSize);
-    if (onResolvedSide != null && preferredSide == TutorialBubbleSide.automatic) {
+    if (onResolvedSide != null &&
+        preferredSide == TutorialBubbleSide.automatic) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         onResolvedSide!(side);
       });
@@ -493,8 +507,7 @@ class _TutorialBubblePositionDelegate extends SingleChildLayoutDelegate {
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
     final Size biggest = constraints.biggest;
-    final double clampedFraction =
-        maxBubbleWidthFraction.clamp(0.0, 1.0);
+    final double clampedFraction = maxBubbleWidthFraction.clamp(0.0, 1.0);
     final double maxWidth = biggest.width.isFinite
         ? biggest.width * clampedFraction
         : double.infinity;

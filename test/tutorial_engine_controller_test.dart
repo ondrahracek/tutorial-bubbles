@@ -23,8 +23,8 @@ void main() {
     final controller = TutorialEngineController(steps: steps);
 
     expect(controller.steps, hasLength(2));
-    expect(controller.steps[0].targetKey, key1);
-    expect(controller.steps[1].targetKey, key2);
+    expect((controller.steps[0].target as KeyTutorialTarget).key, key1);
+    expect((controller.steps[1].target as KeyTutorialTarget).key, key2);
   });
 
   test(
@@ -91,21 +91,21 @@ void main() {
     final controller = TutorialEngineController(steps: steps);
 
     expect(controller.currentIndex, 0);
-    expect(controller.currentStep.targetKey, key1);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key1);
     expect(controller.isLastStep, isFalse);
     expect(controller.isFinished, isFalse);
 
     final firstAdvanceChanged = controller.advance();
     expect(firstAdvanceChanged, isTrue);
     expect(controller.currentIndex, 1);
-    expect(controller.currentStep.targetKey, key2);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key2);
     expect(controller.isLastStep, isFalse);
     expect(controller.isFinished, isFalse);
 
     final secondAdvanceChanged = controller.advance();
     expect(secondAdvanceChanged, isTrue);
     expect(controller.currentIndex, 2);
-    expect(controller.currentStep.targetKey, key3);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key3);
     expect(controller.isLastStep, isTrue);
     expect(controller.isFinished, isFalse);
 
@@ -190,13 +190,13 @@ void main() {
     final controller = TutorialEngineController(steps: steps);
 
     expect(controller.currentIndex, 0);
-    expect(controller.currentStep.targetKey, key1);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key1);
     expect(controller.isFinished, isFalse);
 
     final skipped = controller.skip();
     expect(skipped, isTrue);
     expect(controller.currentIndex, 1);
-    expect(controller.currentStep.targetKey, key2);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key2);
     expect(controller.isLastStep, isTrue);
     expect(controller.isFinished, isFalse);
 
@@ -243,8 +243,8 @@ void main() {
   });
 
   test(
-       'TutorialEngineController goBack moves to previous step and does nothing on first step or when finished',
-       () {
+      'TutorialEngineController goBack moves to previous step and does nothing on first step or when finished',
+      () {
     final key1 = GlobalKey();
     final key2 = GlobalKey();
     final key3 = GlobalKey();
@@ -271,11 +271,11 @@ void main() {
 
     controller.advance();
     expect(controller.currentIndex, 1);
-    expect(controller.currentStep.targetKey, key2);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key2);
     final goBackFromSecond = controller.goBack();
     expect(goBackFromSecond, isTrue);
     expect(controller.currentIndex, 0);
-    expect(controller.currentStep.targetKey, key1);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key1);
 
     controller.advance();
     controller.advance();
@@ -293,7 +293,9 @@ void main() {
     expect(controller.currentIndex, 1);
   });
 
-  test('TutorialEngineController jumpTo ignores out of range indices and does not notify', () {
+  test(
+      'TutorialEngineController jumpTo ignores out of range indices and does not notify',
+      () {
     final key1 = GlobalKey();
     final key2 = GlobalKey();
     final controller = TutorialEngineController(
@@ -343,7 +345,9 @@ void main() {
     expect(notifications, 0);
   });
 
-  test('TutorialEngineController jumpTo valid index updates current step and notifies once', () {
+  test(
+      'TutorialEngineController jumpTo valid index updates current step and notifies once',
+      () {
     final key1 = GlobalKey();
     final key2 = GlobalKey();
     final controller = TutorialEngineController(
@@ -367,11 +371,13 @@ void main() {
     controller.jumpTo(1);
 
     expect(controller.currentIndex, 1);
-    expect(controller.currentStep.targetKey, key2);
+    expect((controller.currentStep.target as KeyTutorialTarget).key, key2);
     expect(notifications, 1);
   });
 
-  test('TutorialEngineController start only notifies the started listenable once', () {
+  test(
+      'TutorialEngineController start only notifies the started listenable once',
+      () {
     final key = GlobalKey();
     final controller = TutorialEngineController(
       steps: [
@@ -394,7 +400,9 @@ void main() {
     expect(notifications, 1);
   });
 
-  test('TutorialEngineController records completion reason for advance, skip, and finish', () {
+  test(
+      'TutorialEngineController records completion reason for advance, skip, and finish',
+      () {
     final key = GlobalKey();
 
     final advanceController = TutorialEngineController(
@@ -406,7 +414,8 @@ void main() {
       ],
     );
     advanceController.advance();
-    expect(advanceController.lastCompletionReason, TutorialCompletionReason.completed);
+    expect(advanceController.lastCompletionReason,
+        TutorialCompletionReason.completed);
 
     final skipController = TutorialEngineController(
       steps: [
@@ -417,7 +426,8 @@ void main() {
       ],
     );
     skipController.skip();
-    expect(skipController.lastCompletionReason, TutorialCompletionReason.skipped);
+    expect(
+        skipController.lastCompletionReason, TutorialCompletionReason.skipped);
 
     final finishController = TutorialEngineController(
       steps: [
@@ -428,7 +438,7 @@ void main() {
       ],
     );
     finishController.finish();
-    expect(finishController.lastCompletionReason, TutorialCompletionReason.finished);
+    expect(finishController.lastCompletionReason,
+        TutorialCompletionReason.finished);
   });
 }
-

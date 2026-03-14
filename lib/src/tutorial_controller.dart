@@ -3,7 +3,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'enums.dart';
-import 'tutorial_visuals.dart';
+import 'tutorial_models.dart';
 
 /// A simple controller that owns a list of [TutorialStep]s.
 ///

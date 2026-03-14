@@ -15,6 +15,8 @@ class TutorialInteractionBlocker extends StatelessWidget {
     super.key,
     required this.targetRect,
     required this.enabled,
+    this.allowTargetTap = true,
+    this.blockOutsideTarget = true,
     this.highlightShape = const TutorialHighlightShape.rect(),
     this.onTargetTap,
     this.onOutsideTap,
@@ -22,6 +24,8 @@ class TutorialInteractionBlocker extends StatelessWidget {
 
   final Rect targetRect;
   final bool enabled;
+  final bool allowTargetTap;
+  final bool blockOutsideTarget;
   final TutorialHighlightShape highlightShape;
   final VoidCallback? onTargetTap;
   final VoidCallback? onOutsideTap;
@@ -49,6 +53,8 @@ class TutorialInteractionBlocker extends StatelessWidget {
         if (clamped.isEmpty) {
           return _ShapeInteractionBarrier(
             targetRect: clamped,
+            allowTargetTap: allowTargetTap,
+            blockOutsideTarget: blockOutsideTarget,
             highlightShape: highlightShape,
             onTargetTap: onTargetTap,
             onOutsideTap: onOutsideTap,
@@ -57,6 +63,8 @@ class TutorialInteractionBlocker extends StatelessWidget {
 
         return _ShapeInteractionBarrier(
           targetRect: clamped,
+          allowTargetTap: allowTargetTap,
+          blockOutsideTarget: blockOutsideTarget,
           highlightShape: highlightShape,
           onTargetTap: onTargetTap,
           onOutsideTap: onOutsideTap,
@@ -69,12 +77,16 @@ class TutorialInteractionBlocker extends StatelessWidget {
 class _ShapeInteractionBarrier extends LeafRenderObjectWidget {
   const _ShapeInteractionBarrier({
     required this.targetRect,
+    required this.allowTargetTap,
+    required this.blockOutsideTarget,
     required this.highlightShape,
     this.onTargetTap,
     this.onOutsideTap,
   });
 
   final Rect targetRect;
+  final bool allowTargetTap;
+  final bool blockOutsideTarget;
   final TutorialHighlightShape highlightShape;
   final VoidCallback? onTargetTap;
   final VoidCallback? onOutsideTap;
@@ -83,6 +95,8 @@ class _ShapeInteractionBarrier extends LeafRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     return _RenderShapeInteractionBarrier(
       targetRect: targetRect,
+      allowTargetTap: allowTargetTap,
+      blockOutsideTarget: blockOutsideTarget,
       highlightShape: highlightShape,
       textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
       onTargetTap: onTargetTap,
@@ -97,6 +111,8 @@ class _ShapeInteractionBarrier extends LeafRenderObjectWidget {
   ) {
     renderObject
       ..targetRect = targetRect
+      ..allowTargetTap = allowTargetTap
+      ..blockOutsideTarget = blockOutsideTarget
       ..highlightShape = highlightShape
       ..textDirection = Directionality.maybeOf(context) ?? TextDirection.ltr
       ..onTargetTap = onTargetTap
@@ -107,17 +123,23 @@ class _ShapeInteractionBarrier extends LeafRenderObjectWidget {
 class _RenderShapeInteractionBarrier extends RenderBox {
   _RenderShapeInteractionBarrier({
     required Rect targetRect,
+    required bool allowTargetTap,
+    required bool blockOutsideTarget,
     required TutorialHighlightShape highlightShape,
     required TextDirection textDirection,
     VoidCallback? onTargetTap,
     VoidCallback? onOutsideTap,
   })  : _targetRect = targetRect,
+        _allowTargetTap = allowTargetTap,
+        _blockOutsideTarget = blockOutsideTarget,
         _highlightShape = highlightShape,
         _textDirection = textDirection,
         _onTargetTap = onTargetTap,
         _onOutsideTap = onOutsideTap;
 
   Rect _targetRect;
+  bool _allowTargetTap;
+  bool _blockOutsideTarget;
   TutorialHighlightShape _highlightShape;
   TextDirection _textDirection;
   VoidCallback? _onTargetTap;
@@ -136,6 +158,22 @@ class _RenderShapeInteractionBarrier extends RenderBox {
       return;
     }
     _highlightShape = value;
+    markNeedsPaint();
+  }
+
+  set allowTargetTap(bool value) {
+    if (_allowTargetTap == value) {
+      return;
+    }
+    _allowTargetTap = value;
+    markNeedsPaint();
+  }
+
+  set blockOutsideTarget(bool value) {
+    if (_blockOutsideTarget == value) {
+      return;
+    }
+    _blockOutsideTarget = value;
     markNeedsPaint();
   }
 
@@ -175,10 +213,10 @@ class _RenderShapeInteractionBarrier extends RenderBox {
   bool hitTestSelf(Offset position) {
     final bool insideTarget = _isInsideTarget(position);
     if (insideTarget) {
-      return _onTargetTap != null;
+      return !_allowTargetTap || _onTargetTap != null;
     }
 
-    return true;
+    return _blockOutsideTarget || _onOutsideTap != null;
   }
 
   @override

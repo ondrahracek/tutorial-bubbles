@@ -8,12 +8,13 @@ import 'enums.dart';
 import 'tutorial_bubble_overlay.dart';
 import 'tutorial_controller.dart';
 import 'tutorial_highlight_shape.dart';
+import 'tutorial_models.dart';
 import 'tutorial_visuals.dart';
 
 /// Widget that renders a tutorial overlay for the current [TutorialStep].
 ///
 /// This widget composes the same visual primitives used in standalone
-/// spotlight mode: it measures the current step's [TutorialStep.targetKey]
+/// spotlight mode: it measures the current step's [TutorialStep.target]
 /// and renders a [TutorialBubbleOverlay], which in turn draws the dark
 /// overlay, optional arrow, halos, and a [TutorialBubble] for the bubble
 /// content. No separate engine-specific implementation of these visuals
@@ -33,6 +34,7 @@ class TutorialEngine extends StatefulWidget {
     this.advanceOnBubbleTap = false,
     this.advanceOnOverlayTap = false,
     this.globalVisuals,
+    this.persistence,
     this.persistenceId,
     this.checkpointSteps,
     this.onComplete,
@@ -66,22 +68,19 @@ class TutorialEngine extends StatefulWidget {
   /// per-step basis.
   final TutorialVisuals? globalVisuals;
 
+  /// Optional persistence policy for saving tutorial progress.
+  final TutorialPersistence? persistence;
+
   /// Optional identifier used to persist and restore tutorial progress.
   ///
-  /// When provided, the engine saves the zero-based index of the current step
-  /// using [TutorialProgressStorage] according to [checkpointSteps], and
-  /// clears the saved value when the tutorial finishes. On a subsequent app
-  /// run, creating a new [TutorialEngine] with the same [persistenceId] will
-  /// resume from the saved step index without requiring any extra setup.
+  /// Deprecated compatibility shortcut for simple persistence.
+  ///
+  /// Prefer [persistence] for new code.
   final String? persistenceId;
 
-  /// Optional set of step indices at which progress is persisted.
+  /// Deprecated compatibility shortcut for checkpoint persistence.
   ///
-  /// When null (the default), progress is saved on every step change. When
-  /// non-null, progress is saved only when the current step index is in this
-  /// set. Use an empty set to disable saving (e.g. never persist). Valid
-  /// configurations: null or all indices to save at every step; a non-empty
-  /// set to save only at checkpoint steps; an empty set to never save.
+  /// Prefer [persistence] for new code.
   final Set<int>? checkpointSteps;
 
   /// Optional callback invoked when the tutorial ends.
@@ -101,8 +100,32 @@ class _TutorialEngineState extends State<TutorialEngine> {
   Rect? _currentTargetRect;
   bool _pendingTargetRectUpdate = false;
   bool _hasLoadedPersistedProgress = false;
+  bool _isPersistedCompleted = false;
+  bool _isPreparingStep = false;
+  int _stepPreparationGeneration = 0;
 
   TutorialEngineController get _controller => widget.controller;
+
+  TutorialPersistence? get _effectivePersistence {
+    final persistence = widget.persistence;
+    if (persistence != null) {
+      return persistence;
+    }
+
+    final persistenceId = widget.persistenceId;
+    if (persistenceId == null) {
+      return null;
+    }
+
+    final checkpoints = widget.checkpointSteps;
+    return TutorialPersistence(
+      id: persistenceId,
+      saveStrategy: checkpoints == null
+          ? TutorialSaveStrategy.everyStep
+          : TutorialSaveStrategy.checkpointsOnly,
+      checkpoints: checkpoints,
+    );
+  }
 
   TutorialVisuals? _resolveVisuals() {
     final TutorialVisuals? global = widget.globalVisuals;
@@ -121,7 +144,6 @@ class _TutorialEngineState extends State<TutorialEngine> {
     _controller.currentIndexListenable.addListener(_handleStepChanged);
     _controller.isStartedListenable.addListener(_handleStartedChanged);
     _controller.isFinishedListenable.addListener(_handleFinishedChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTargetRect());
     _maybeLoadPersistedProgress();
   }
 
@@ -138,12 +160,14 @@ class _TutorialEngineState extends State<TutorialEngine> {
       _controller.currentIndexListenable.addListener(_handleStepChanged);
       _controller.isStartedListenable.addListener(_handleStartedChanged);
       _controller.isFinishedListenable.addListener(_handleFinishedChanged);
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _updateTargetRect());
+      _triggerStepPreparation();
     }
 
-    if (oldWidget.persistenceId != widget.persistenceId) {
+    if (oldWidget.persistence != widget.persistence ||
+        oldWidget.persistenceId != widget.persistenceId ||
+        oldWidget.checkpointSteps != widget.checkpointSteps) {
       _hasLoadedPersistedProgress = false;
+      _isPersistedCompleted = false;
       _maybeLoadPersistedProgress();
     }
   }
@@ -159,43 +183,104 @@ class _TutorialEngineState extends State<TutorialEngine> {
   void _handleStartedChanged() {
     if (!mounted) return;
     setState(() {});
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _updateTargetRect();
-      }
-    });
+    _triggerStepPreparation();
   }
 
   void _handleStepChanged() {
     if (!mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _updateTargetRect();
-      }
-    });
     _persistProgressIfNeeded();
+    _triggerStepPreparation();
   }
 
   void _handleFinishedChanged() {
     if (!mounted) return;
     _clearPersistedProgressIfNeeded();
+    _writeCompletedFlagIfNeeded();
     final onComplete = widget.onComplete;
-    final reason = _controller.lastCompletionReason ?? TutorialCompletionReason.completed;
+    final reason =
+        _controller.lastCompletionReason ?? TutorialCompletionReason.completed;
     setState(() {
       _currentTargetRect = null;
+      _isPreparingStep = false;
     });
     onComplete?.call(reason);
   }
 
+  void _triggerStepPreparation() {
+    final generation = ++_stepPreparationGeneration;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _currentTargetRect = null;
+      _isPreparingStep = _controller.isStarted &&
+          !_controller.isFinished &&
+          !_isPersistedCompleted;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || generation != _stepPreparationGeneration) {
+        return;
+      }
+      unawaited(_prepareCurrentStep(generation));
+    });
+  }
+
+  Future<void> _prepareCurrentStep(int generation) async {
+    if (!_controller.isStarted ||
+        _controller.isFinished ||
+        _isPersistedCompleted) {
+      if (mounted && generation == _stepPreparationGeneration) {
+        setState(() {
+          _isPreparingStep = false;
+        });
+      }
+      return;
+    }
+
+    final beforeShow = _controller.currentStep.beforeShow;
+    if (beforeShow != null) {
+      await beforeShow(context, _controller);
+      if (!mounted || generation != _stepPreparationGeneration) {
+        return;
+      }
+    }
+
+    if (!mounted || generation != _stepPreparationGeneration) {
+      return;
+    }
+
+    setState(() {
+      _isPreparingStep = false;
+    });
+    _updateTargetRect(generation: generation);
+  }
+
   void _maybeLoadPersistedProgress() {
-    final String? id = widget.persistenceId;
-    if (id == null || _hasLoadedPersistedProgress) {
+    final persistence = _effectivePersistence;
+    if (persistence == null || _hasLoadedPersistedProgress) {
       return;
     }
     _hasLoadedPersistedProgress = true;
 
     unawaited(() async {
-      final savedIndex = await TutorialProgressStorage.readIndex(id);
+      final isCompleted = await TutorialProgressStorage.readCompleted(
+        persistence.effectiveCompletedKey,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (isCompleted) {
+        setState(() {
+          _isPersistedCompleted = true;
+        });
+        return;
+      }
+
+      final savedIndex =
+          await TutorialProgressStorage.readIndex(persistence.id);
       if (!mounted || savedIndex == null) {
         return;
       }
@@ -212,33 +297,78 @@ class _TutorialEngineState extends State<TutorialEngine> {
   }
 
   void _persistProgressIfNeeded() {
-    final String? id = widget.persistenceId;
-    if (id == null || _controller.isFinished) {
+    final persistence = _effectivePersistence;
+    if (persistence == null ||
+        _controller.isFinished ||
+        _isPersistedCompleted ||
+        persistence.saveStrategy == TutorialSaveStrategy.manual) {
       return;
     }
-    final checkpoints = widget.checkpointSteps;
-    if (checkpoints != null && !checkpoints.contains(_controller.currentIndex)) {
-      return;
+    if (persistence.saveStrategy == TutorialSaveStrategy.checkpointsOnly) {
+      final checkpoints = persistence.checkpoints;
+      if (checkpoints == null ||
+          !checkpoints.contains(_controller.currentIndex)) {
+        return;
+      }
     }
-    unawaited(TutorialProgressStorage.writeIndex(id, _controller.currentIndex));
+    unawaited(TutorialProgressStorage.writeIndex(
+      persistence.id,
+      _controller.currentIndex,
+    ));
   }
 
   void _clearPersistedProgressIfNeeded() {
-    final String? id = widget.persistenceId;
-    if (id == null) {
+    final persistence = _effectivePersistence;
+    if (persistence == null || !persistence.clearOnComplete) {
       return;
     }
-    unawaited(TutorialProgressStorage.clear(id));
+    unawaited(TutorialProgressStorage.clear(persistence.id));
   }
 
-  void _handleAdvanceRequested() {
-    if (!_controller.isFinished) {
+  void _writeCompletedFlagIfNeeded() {
+    final persistence = _effectivePersistence;
+    if (persistence == null) {
+      return;
+    }
+    if (_controller.lastCompletionReason ==
+        TutorialCompletionReason.completed) {
+      _isPersistedCompleted = true;
+      unawaited(TutorialProgressStorage.writeCompleted(
+        persistence.effectiveCompletedKey,
+        true,
+      ));
+    }
+  }
+
+  Future<void> _handleOverlayTap() async {
+    final behavior = _controller.currentStep.behavior;
+    await behavior?.onOverlayTap?.call(context);
+    if (!mounted || _controller.isFinished) {
+      return;
+    }
+    if ((behavior?.advanceOnOverlayTap ?? widget.advanceOnOverlayTap)) {
       _controller.advance();
     }
   }
 
-  void _scheduleTargetRectUpdateRetry() {
-    if (!mounted || _controller.isFinished || _pendingTargetRectUpdate) {
+  Future<void> _handleTargetTap() async {
+    final behavior = _controller.currentStep.behavior;
+    await behavior?.onTargetTap?.call(context);
+  }
+
+  Future<void> _handleBubbleTap() async {
+    final behavior = _controller.currentStep.behavior;
+    if ((behavior?.advanceOnBubbleTap ?? widget.advanceOnBubbleTap) &&
+        !_controller.isFinished) {
+      _controller.advance();
+    }
+  }
+
+  void _scheduleTargetRectUpdateRetry(int generation) {
+    if (!mounted ||
+        _controller.isFinished ||
+        _pendingTargetRectUpdate ||
+        generation != _stepPreparationGeneration) {
       return;
     }
     _pendingTargetRectUpdate = true;
@@ -246,12 +376,58 @@ class _TutorialEngineState extends State<TutorialEngine> {
       if (!mounted) {
         return;
       }
-      _updateTargetRect();
+      _updateTargetRect(generation: generation);
     });
   }
 
-  void _updateTargetRect() {
+  bool _isValidRect(Rect rect) {
+    return rect.width > 0 &&
+        rect.height > 0 &&
+        rect.left.isFinite &&
+        rect.top.isFinite &&
+        rect.right.isFinite &&
+        rect.bottom.isFinite;
+  }
+
+  Rect? _resolveTargetRect() {
+    final target = _controller.currentStep.target;
+    if (target is KeyTutorialTarget) {
+      final targetContext = target.key.currentContext;
+      final overlayContext = _overlayKey.currentContext;
+
+      if (targetContext == null || overlayContext == null) {
+        return null;
+      }
+
+      final targetBox = targetContext.findRenderObject() as RenderBox?;
+      final overlayBox = overlayContext.findRenderObject() as RenderBox?;
+
+      if (targetBox == null || overlayBox == null) {
+        return null;
+      }
+
+      final topLeft =
+          targetBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+      return topLeft & targetBox.size;
+    }
+
+    if (target is RectTutorialTarget) {
+      final overlayContext = _overlayKey.currentContext;
+      if (overlayContext == null) {
+        return null;
+      }
+      return target.resolver(overlayContext);
+    }
+
+    return null;
+  }
+
+  void _updateTargetRect({int? generation}) {
     _pendingTargetRectUpdate = false;
+
+    if (generation != null && generation != _stepPreparationGeneration) {
+      return;
+    }
 
     if (_controller.isFinished) {
       if (_currentTargetRect != null) {
@@ -262,28 +438,12 @@ class _TutorialEngineState extends State<TutorialEngine> {
       return;
     }
 
-    final targetKey = _controller.currentStep.targetKey;
-    final targetContext = targetKey.currentContext;
-    final overlayContext = _overlayKey.currentContext;
-
-    if (targetContext == null || overlayContext == null) {
-      _scheduleTargetRectUpdateRetry();
+    final nextRect = _resolveTargetRect();
+    if (nextRect == null || !_isValidRect(nextRect)) {
+      _scheduleTargetRectUpdateRetry(generation ?? _stepPreparationGeneration);
       return;
     }
 
-    final targetBox = targetContext.findRenderObject() as RenderBox?;
-    final overlayBox = overlayContext.findRenderObject() as RenderBox?;
-
-    if (targetBox == null || overlayBox == null) {
-      _scheduleTargetRectUpdateRetry();
-      return;
-    }
-
-    final topLeft =
-        targetBox.localToGlobal(Offset.zero, ancestor: overlayBox);
-    final size = targetBox.size;
-
-    final nextRect = topLeft & size;
     if (_currentTargetRect != nextRect) {
       setState(() {
         _currentTargetRect = nextRect;
@@ -293,10 +453,30 @@ class _TutorialEngineState extends State<TutorialEngine> {
 
   @override
   Widget build(BuildContext context) {
-    final bool showOverlay =
-        _controller.isStarted && !_controller.isFinished && _currentTargetRect != null;
+    final stepBehavior = _controller.currentStep.behavior;
+    final advanceOnBubbleTap =
+        stepBehavior?.advanceOnBubbleTap ?? widget.advanceOnBubbleTap;
+    final blockOutsideTarget = stepBehavior?.blockOutsideTarget ?? true;
+    final allowTargetTap = stepBehavior?.allowTargetTap ?? true;
+    final hasTargetTapHandler = stepBehavior?.onTargetTap != null;
+    final hasOverlayTapHandler = stepBehavior?.onOverlayTap != null;
+    final advanceOnOverlayTap =
+        stepBehavior?.advanceOnOverlayTap ?? widget.advanceOnOverlayTap;
+    final bool showOverlay = _controller.isStarted &&
+        !_controller.isFinished &&
+        !_isPersistedCompleted &&
+        !_isPreparingStep &&
+        _currentTargetRect != null;
 
     final visuals = _resolveVisuals();
+
+    if (_controller.isStarted && !_controller.isFinished && !_isPreparingStep) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _updateTargetRect();
+        }
+      });
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -309,18 +489,20 @@ class _TutorialEngineState extends State<TutorialEngine> {
               Positioned.fill(
                 child: TutorialBubbleOverlay(
                   targetRect: _currentTargetRect!,
-                  preferredSide: TutorialBubbleSide.automatic,
+                  preferredSide: _controller.currentStep.preferredSide ??
+                      TutorialBubbleSide.automatic,
                   overlayColor:
                       visuals?.overlayColor ?? const Color(0xB3000000),
                   backgroundColor: visuals?.bubbleBackgroundColor,
                   backgroundGradient: visuals?.bubbleBackgroundGradient,
+                  bubbleCornerRadius: visuals?.bubbleCornerRadius ?? 12,
                   targetHaloEnabled: visuals?.targetHaloEnabled ?? false,
                   targetHaloColor: visuals?.targetHaloColor,
                   targetShineEnabled: visuals?.targetShineEnabled ?? false,
                   targetShineColor: visuals?.targetShineColor,
                   targetShineBlurRadius: visuals?.targetShineBlurRadius ?? 18,
-                  highlightShape:
-                      visuals?.highlightShape ?? const TutorialHighlightShape.rect(),
+                  highlightShape: visuals?.highlightShape ??
+                      const TutorialHighlightShape.rect(),
                   bubbleHaloEnabled: visuals?.bubbleHaloEnabled ?? false,
                   bubbleHaloColor: visuals?.bubbleHaloColor,
                   arrowEnabled: visuals?.arrowEnabled ?? true,
@@ -329,11 +511,22 @@ class _TutorialEngineState extends State<TutorialEngine> {
                   arrowHeadLength: visuals?.arrowHeadLength ?? 10,
                   arrowHaloEnabled: visuals?.arrowHaloEnabled ?? false,
                   arrowHaloColor: visuals?.arrowHaloColor,
-                  onBackgroundTap:
-                      widget.advanceOnOverlayTap ? _handleAdvanceRequested : null,
+                  blockOutsideTarget: blockOutsideTarget,
+                  allowTargetTap: allowTargetTap,
+                  onTargetTap: hasTargetTapHandler
+                      ? () {
+                          unawaited(_handleTargetTap());
+                        }
+                      : null,
+                  onBackgroundTap: (advanceOnOverlayTap || hasOverlayTapHandler)
+                      ? () {
+                          unawaited(_handleOverlayTap());
+                        }
+                      : null,
                   child: Builder(
                     builder: (context) {
-                      final bubble = _controller.currentStep.bubbleBuilder(context);
+                      final bubble =
+                          _controller.currentStep.bubbleBuilder(context);
                       Widget styledBubble = bubble;
 
                       if (visuals?.textStyle != null) {
@@ -343,12 +536,14 @@ class _TutorialEngineState extends State<TutorialEngine> {
                         );
                       }
 
-                      if (!widget.advanceOnBubbleTap) {
+                      if (!advanceOnBubbleTap) {
                         return styledBubble;
                       }
                       return GestureDetector(
                         behavior: HitTestBehavior.translucent,
-                        onTap: _handleAdvanceRequested,
+                        onTap: () {
+                          unawaited(_handleBubbleTap());
+                        },
                         child: styledBubble,
                       );
                     },
