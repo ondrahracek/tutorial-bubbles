@@ -43,4 +43,13 @@ void main() {
     expect(merged.targetShineBlurRadius, 22);
     expect(merged.highlightShape, overrides.highlightShape);
   });
+
+  test('TutorialVisuals.merge includes bubbleCornerRadius', () {
+    const base = TutorialVisuals(bubbleCornerRadius: 12);
+    const overrides = TutorialVisuals(bubbleCornerRadius: 24);
+
+    final merged = base.merge(overrides);
+
+    expect(merged.bubbleCornerRadius, 24);
+  });
 }

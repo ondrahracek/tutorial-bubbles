@@ -165,8 +165,7 @@ void main() {
     expect(resetController.currentIndex, 0);
   });
 
-  testWidgets(
-      'Progress is only saved at configurable checkpoint steps',
+  testWidgets('Progress is only saved at configurable checkpoint steps',
       (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
@@ -176,8 +175,7 @@ void main() {
       6,
       (i) => TutorialStep(
         targetKey: key,
-        bubbleBuilder: (context) =>
-            TutorialTextBubble(text: 'Step ${i + 1}'),
+        bubbleBuilder: (context) => TutorialTextBubble(text: 'Step ${i + 1}'),
       ),
     );
 
@@ -238,8 +236,8 @@ void main() {
   });
 
   testWidgets(
-       'With checkpointSteps empty, progress is never saved on step change',
-       (tester) async {
+      'With checkpointSteps empty, progress is never saved on step change',
+      (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
     final key = GlobalKey();
@@ -247,13 +245,11 @@ void main() {
     final steps = [
       TutorialStep(
         targetKey: key,
-        bubbleBuilder: (context) =>
-            const TutorialTextBubble(text: 'Step 1'),
+        bubbleBuilder: (context) => const TutorialTextBubble(text: 'Step 1'),
       ),
       TutorialStep(
         targetKey: key,
-        bubbleBuilder: (context) =>
-            const TutorialTextBubble(text: 'Step 2'),
+        bubbleBuilder: (context) => const TutorialTextBubble(text: 'Step 2'),
       ),
     ];
 
@@ -291,7 +287,8 @@ void main() {
     await TutorialProgressStorage.clear(tutorialId);
   });
 
-  testWidgets('Progress is cleared when the tutorial completes', (tester) async {
+  testWidgets('Progress is cleared when the tutorial completes',
+      (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
     final key = GlobalKey();
@@ -299,7 +296,8 @@ void main() {
       steps: [
         TutorialStep(
           targetKey: key,
-          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Only step'),
+          bubbleBuilder: (context) =>
+              const TutorialTextBubble(text: 'Only step'),
         ),
       ],
     );
@@ -331,7 +329,8 @@ void main() {
     expect(await TutorialProgressStorage.readIndex(tutorialId), isNull);
   });
 
-  testWidgets('Null checkpointSteps saves progress on every step change', (tester) async {
+  testWidgets('Null checkpointSteps saves progress on every step change',
+      (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
     final key = GlobalKey();
@@ -373,5 +372,122 @@ void main() {
 
     expect(await TutorialProgressStorage.readIndex(tutorialId), 1);
   });
-}
 
+  testWidgets('TutorialPersistence manual mode does not auto-save',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+            targetKey: key, bubbleBuilder: (context) => const Text('1')),
+        TutorialStep(
+            targetKey: key, bubbleBuilder: (context) => const Text('2')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: const TutorialPersistence(
+            id: 'manual-tutorial',
+            saveStrategy: TutorialSaveStrategy.manual,
+          ),
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.advance();
+    await tester.pumpAndSettle();
+
+    expect(await TutorialProgressStorage.readIndex('manual-tutorial'), isNull);
+  });
+
+  testWidgets(
+      'completed persistence suppresses the tutorial on future launches',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    const persistence = TutorialPersistence(
+      id: 'completed-tutorial',
+      clearOnComplete: true,
+    );
+
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+            targetKey: key,
+            bubbleBuilder: (context) => const Text('Only step')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.advance();
+    await tester.pumpAndSettle();
+
+    expect(
+      await TutorialProgressStorage.readCompleted(
+          persistence.effectiveCompletedKey),
+      isTrue,
+    );
+
+    final resumedController = TutorialEngineController(
+      steps: [
+        TutorialStep(
+            targetKey: key,
+            bubbleBuilder: (context) => const Text('Only step')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: resumedController,
+          persistence: persistence,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    resumedController.start();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TutorialBubbleOverlay), findsNothing);
+  });
+}

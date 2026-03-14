@@ -45,7 +45,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('This step scrolls into view with beforeShow before measuring.'),
+      find.text(
+          'This step scrolls into view with beforeShow before measuring.'),
       findsOneWidget,
     );
     expect(find.text('Filter chip target'), findsOneWidget);
@@ -87,10 +88,9 @@ void main() {
     await tester.tap(find.text('Reset tutorial persistence'));
     await tester.pumpAndSettle();
 
-    expect(await TutorialProgressStorage.readIndex(tutorialPersistenceId), isNull);
     expect(
-      await TutorialProgressStorage.readCompleted(tutorialCompletedKey),
-      isFalse,
-    );
+        await TutorialProgressStorage.readIndex(tutorialPersistenceId), isNull);
+    expect(await TutorialProgressStorage.readCompleted(tutorialCompletedKey),
+        isFalse);
   });
 }
