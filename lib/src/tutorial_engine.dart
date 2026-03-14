@@ -119,6 +119,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
   void initState() {
     super.initState();
     _controller.currentIndexListenable.addListener(_handleStepChanged);
+    _controller.isStartedListenable.addListener(_handleStartedChanged);
     _controller.isFinishedListenable.addListener(_handleFinishedChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateTargetRect());
     _maybeLoadPersistedProgress();
@@ -130,9 +131,12 @@ class _TutorialEngineState extends State<TutorialEngine> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.currentIndexListenable
           .removeListener(_handleStepChanged);
+      oldWidget.controller.isStartedListenable
+          .removeListener(_handleStartedChanged);
       oldWidget.controller.isFinishedListenable
           .removeListener(_handleFinishedChanged);
       _controller.currentIndexListenable.addListener(_handleStepChanged);
+      _controller.isStartedListenable.addListener(_handleStartedChanged);
       _controller.isFinishedListenable.addListener(_handleFinishedChanged);
       WidgetsBinding.instance
           .addPostFrameCallback((_) => _updateTargetRect());
@@ -147,8 +151,19 @@ class _TutorialEngineState extends State<TutorialEngine> {
   @override
   void dispose() {
     _controller.currentIndexListenable.removeListener(_handleStepChanged);
+    _controller.isStartedListenable.removeListener(_handleStartedChanged);
     _controller.isFinishedListenable.removeListener(_handleFinishedChanged);
     super.dispose();
+  }
+
+  void _handleStartedChanged() {
+    if (!mounted) return;
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateTargetRect();
+      }
+    });
   }
 
   void _handleStepChanged() {
@@ -279,7 +294,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
   @override
   Widget build(BuildContext context) {
     final bool showOverlay =
-        !_controller.isFinished && _currentTargetRect != null;
+        _controller.isStarted && !_controller.isFinished && _currentTargetRect != null;
 
     final visuals = _resolveVisuals();
 

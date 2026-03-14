@@ -1,7 +1,6 @@
 name: tutorial_bubbles
 description: A Flutter package for building guided tutorial bubbles.
 version: 0.0.1
-homepage: https://example.com/tutorial_bubbles
 
 environment:
   sdk: ">=2.17.0 <4.0.0"

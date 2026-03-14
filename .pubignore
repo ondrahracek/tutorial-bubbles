@@ -1,0 +1,34 @@
+# Internal workflow
+ralph/
+
+# Flutter generated/local artifacts
+.dart_tool/
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+example/.dart_tool/
+example/build/
+example/coverage/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+
+# Local/editor/git metadata
+.git/
+.idea/
+.vscode/
+
+# Crash and replay logs
+hs_err_pid*
+replay_pid*
+
+# Repo-only metadata
+pubspec.lock
+example/.metadata
+example/.gitignore
+
+# Future internal tooling
+.cursor/
+.opencode/
+.agents/
+.github/

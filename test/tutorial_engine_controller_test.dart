@@ -243,8 +243,8 @@ void main() {
   });
 
   test(
-      'TutorialEngineController goBack moves to previous step and does nothing on first step or when finished',
-      () {
+       'TutorialEngineController goBack moves to previous step and does nothing on first step or when finished',
+       () {
     final key1 = GlobalKey();
     final key2 = GlobalKey();
     final key3 = GlobalKey();
@@ -291,6 +291,144 @@ void main() {
     final goBackWhenFinished = controller.goBack();
     expect(goBackWhenFinished, isFalse);
     expect(controller.currentIndex, 1);
+  });
+
+  test('TutorialEngineController jumpTo ignores out of range indices and does not notify', () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const Text('Step 2'),
+        ),
+      ],
+    );
+
+    var notifications = 0;
+    controller.currentIndexListenable.addListener(() {
+      notifications += 1;
+    });
+
+    controller.jumpTo(-1);
+    controller.jumpTo(99);
+
+    expect(controller.currentIndex, 0);
+    expect(notifications, 0);
+  });
+
+  test('TutorialEngineController jumpTo current index is a no-op', () {
+    final key = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+      ],
+    );
+
+    var notifications = 0;
+    controller.currentIndexListenable.addListener(() {
+      notifications += 1;
+    });
+
+    controller.jumpTo(0);
+
+    expect(controller.currentIndex, 0);
+    expect(notifications, 0);
+  });
+
+  test('TutorialEngineController jumpTo valid index updates current step and notifies once', () {
+    final key1 = GlobalKey();
+    final key2 = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key1,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+        TutorialStep(
+          targetKey: key2,
+          bubbleBuilder: (context) => const Text('Step 2'),
+        ),
+      ],
+    );
+
+    var notifications = 0;
+    controller.currentIndexListenable.addListener(() {
+      notifications += 1;
+    });
+
+    controller.jumpTo(1);
+
+    expect(controller.currentIndex, 1);
+    expect(controller.currentStep.targetKey, key2);
+    expect(notifications, 1);
+  });
+
+  test('TutorialEngineController start only notifies the started listenable once', () {
+    final key = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+      ],
+    );
+
+    var notifications = 0;
+    controller.isStartedListenable.addListener(() {
+      notifications += 1;
+    });
+
+    controller.start();
+    controller.start();
+
+    expect(controller.isStarted, isTrue);
+    expect(notifications, 1);
+  });
+
+  test('TutorialEngineController records completion reason for advance, skip, and finish', () {
+    final key = GlobalKey();
+
+    final advanceController = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+      ],
+    );
+    advanceController.advance();
+    expect(advanceController.lastCompletionReason, TutorialCompletionReason.completed);
+
+    final skipController = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+      ],
+    );
+    skipController.skip();
+    expect(skipController.lastCompletionReason, TutorialCompletionReason.skipped);
+
+    final finishController = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const Text('Step 1'),
+        ),
+      ],
+    );
+    finishController.finish();
+    expect(finishController.lastCompletionReason, TutorialCompletionReason.finished);
   });
 }
 

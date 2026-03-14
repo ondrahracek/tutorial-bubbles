@@ -238,8 +238,8 @@ void main() {
   });
 
   testWidgets(
-      'With checkpointSteps empty, progress is never saved on step change',
-      (tester) async {
+       'With checkpointSteps empty, progress is never saved on step change',
+       (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
     final key = GlobalKey();
@@ -289,6 +289,89 @@ void main() {
     expect(await TutorialProgressStorage.readIndex(tutorialId), isNull);
 
     await TutorialProgressStorage.clear(tutorialId);
+  });
+
+  testWidgets('Progress is cleared when the tutorial completes', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Only step'),
+        ),
+      ],
+    );
+
+    const tutorialId = 'completion-clear-tutorial';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistenceId: tutorialId,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+
+    controller.advance();
+    await tester.pumpAndSettle();
+
+    expect(await TutorialProgressStorage.readIndex(tutorialId), isNull);
+  });
+
+  testWidgets('Null checkpointSteps saves progress on every step change', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    final key = GlobalKey();
+    final controller = TutorialEngineController(
+      steps: [
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Step 1'),
+        ),
+        TutorialStep(
+          targetKey: key,
+          bubbleBuilder: (context) => const TutorialTextBubble(text: 'Step 2'),
+        ),
+      ],
+    );
+
+    const tutorialId = 'save-every-step-tutorial';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TutorialEngine(
+          controller: controller,
+          persistenceId: tutorialId,
+          child: Center(
+            child: ElevatedButton(
+              key: key,
+              onPressed: () {},
+              child: const Text('Target'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    controller.start();
+    await tester.pumpAndSettle();
+    controller.advance();
+    await tester.pumpAndSettle();
+
+    expect(await TutorialProgressStorage.readIndex(tutorialId), 1);
   });
 }
 
