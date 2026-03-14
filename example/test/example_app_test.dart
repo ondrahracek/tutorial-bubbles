@@ -75,6 +75,31 @@ void main() {
     expect(find.text('Details header target'), findsOneWidget);
   });
 
+  testWidgets(
+      'feature tour does not stack multiple details routes on repeated taps',
+      (tester) async {
+    await tester.pumpWidget(const TutorialBubblesExampleApp());
+
+    await tester.tap(find.text('Feature tour'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Welcome button'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Placement demo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Filter chip target'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Painted summary band'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open details'), warnIfMissed: false);
+    await tester.pump();
+    await tester.tap(find.text('Open details'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Details showcase', skipOffstage: false), findsOneWidget);
+  });
+
   testWidgets('reset tutorial persistence clears resume and completion state',
       (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{

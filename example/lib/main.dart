@@ -24,6 +24,7 @@ class _TutorialBubblesExampleAppState extends State<TutorialBubblesExampleApp> {
   late final TutorialKeys _tutorialKeys;
   late final TutorialEngineController _tutorialController;
   late final ExampleTutorialServices _tutorialServices;
+  bool _isPushingDetailsRoute = false;
 
   @override
   void initState() {
@@ -34,17 +35,22 @@ class _TutorialBubblesExampleAppState extends State<TutorialBubblesExampleApp> {
       ensureHomeVisible: _ensureHomeVisible,
       syntheticSummaryRect: _syntheticSummaryRect,
     );
-    _tutorialController = createTutorialController(_tutorialKeys, _tutorialServices);
+    _tutorialController =
+        createTutorialController(_tutorialKeys, _tutorialServices);
   }
 
   Future<void> _navigateToDetails(BuildContext context) async {
     final navigator = _navigatorKey.currentState;
-    if (navigator == null) {
+    if (navigator == null || _isPushingDetailsRoute) {
       return;
     }
-    final currentRoute = ModalRoute.of(_navigatorKey.currentContext ?? context)?.settings.name;
+    final currentRoute =
+        ModalRoute.of(_navigatorKey.currentContext ?? context)?.settings.name;
     if (currentRoute != '/tutorial/details') {
-      await navigator.pushNamed<void>('/tutorial/details');
+      _isPushingDetailsRoute = true;
+      navigator.pushNamed<void>('/tutorial/details').whenComplete(() {
+        _isPushingDetailsRoute = false;
+      });
     }
   }
 
@@ -72,7 +78,8 @@ class _TutorialBubblesExampleAppState extends State<TutorialBubblesExampleApp> {
     final panelTopLeft =
         panelBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     final bandTop = panelTopLeft.dy + 96;
-    return Rect.fromLTWH(panelTopLeft.dx + 24, bandTop, panelBox.size.width - 48, 96);
+    return Rect.fromLTWH(
+        panelTopLeft.dx + 24, bandTop, panelBox.size.width - 48, 96);
   }
 
   Future<void> _resetTutorialPersistence() async {
@@ -147,7 +154,8 @@ class _TutorialBubblesExampleAppState extends State<TutorialBubblesExampleApp> {
       initialRoute: '/',
       routes: {
         '/': (context) => _HomePage(
-              onStandalone: () => Navigator.of(context).pushNamed<void>('/standalone'),
+              onStandalone: () =>
+                  Navigator.of(context).pushNamed<void>('/standalone'),
               onFeatureTour: _startFeatureTour,
               onResetPersistence: _resetTutorialPersistence,
             ),

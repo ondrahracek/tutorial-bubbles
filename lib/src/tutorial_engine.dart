@@ -103,6 +103,8 @@ class _TutorialEngineState extends State<TutorialEngine> {
   bool _isPersistedCompleted = false;
   bool _isPreparingStep = false;
   int _stepPreparationGeneration = 0;
+  int _activeTargetTapToken = 0;
+  bool _isHandlingTargetTap = false;
 
   TutorialEngineController get _controller => widget.controller;
 
@@ -174,6 +176,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
 
   @override
   void dispose() {
+    _resetTargetTapHandling();
     _controller.currentIndexListenable.removeListener(_handleStepChanged);
     _controller.isStartedListenable.removeListener(_handleStartedChanged);
     _controller.isFinishedListenable.removeListener(_handleFinishedChanged);
@@ -188,6 +191,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
 
   void _handleStepChanged() {
     if (!mounted) return;
+    _resetTargetTapHandling();
     _persistProgressIfNeeded();
     _triggerStepPreparation();
   }
@@ -196,6 +200,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
     if (!mounted) return;
     _clearPersistedProgressIfNeeded();
     _writeCompletedFlagIfNeeded();
+    _resetTargetTapHandling();
     final onComplete = widget.onComplete;
     final reason =
         _controller.lastCompletionReason ?? TutorialCompletionReason.completed;
@@ -351,9 +356,39 @@ class _TutorialEngineState extends State<TutorialEngine> {
     }
   }
 
+  void _resetTargetTapHandling() {
+    _activeTargetTapToken += 1;
+    _isHandlingTargetTap = false;
+  }
+
   Future<void> _handleTargetTap() async {
+    if (_isHandlingTargetTap || _controller.isFinished) {
+      return;
+    }
+
     final behavior = _controller.currentStep.behavior;
+    final step = _controller.currentStep;
+    final stepIndex = _controller.currentIndex;
+    final token = ++_activeTargetTapToken;
+    _isHandlingTargetTap = true;
+
     await behavior?.onTargetTap?.call(context);
+
+    if (!mounted ||
+        _controller.isFinished ||
+        token != _activeTargetTapToken ||
+        _controller.currentIndex != stepIndex ||
+        !identical(_controller.currentStep, step)) {
+      if (token == _activeTargetTapToken) {
+        _isHandlingTargetTap = false;
+      }
+      return;
+    }
+
+    _isHandlingTargetTap = false;
+    if (behavior?.advanceOnTargetTap ?? false) {
+      _controller.advance();
+    }
   }
 
   Future<void> _handleBubbleTap() async {
@@ -459,6 +494,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
     final blockOutsideTarget = stepBehavior?.blockOutsideTarget ?? true;
     final allowTargetTap = stepBehavior?.allowTargetTap ?? true;
     final hasTargetTapHandler = stepBehavior?.onTargetTap != null;
+    final advanceOnTargetTap = stepBehavior?.advanceOnTargetTap ?? false;
     final hasOverlayTapHandler = stepBehavior?.onOverlayTap != null;
     final advanceOnOverlayTap =
         stepBehavior?.advanceOnOverlayTap ?? widget.advanceOnOverlayTap;
@@ -513,7 +549,7 @@ class _TutorialEngineState extends State<TutorialEngine> {
                   arrowHaloColor: visuals?.arrowHaloColor,
                   blockOutsideTarget: blockOutsideTarget,
                   allowTargetTap: allowTargetTap,
-                  onTargetTap: hasTargetTapHandler
+                  onTargetTap: (hasTargetTapHandler || advanceOnTargetTap)
                       ? () {
                           unawaited(_handleTargetTap());
                         }

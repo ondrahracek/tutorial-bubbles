@@ -358,6 +358,46 @@ TutorialStep(
 )
 ```
 
+### Cross-route navigation steps
+
+When a highlighted target pushes a new route, prefer letting the engine advance on the target tap itself.
+
+```dart
+TutorialStep(
+  target: TutorialTarget.key(openDetailsKey),
+  behavior: TutorialStepBehavior(
+    allowTargetTap: true,
+    advanceOnTargetTap: true,
+    onTargetTap: (context) async {
+      Navigator.of(context).pushNamed('/details');
+    },
+  ),
+  bubbleBuilder: (context) => const TutorialTextContent(
+    text: 'Tap to open details.',
+  ),
+)
+```
+
+Then let the next step wait for the destination UI to settle:
+
+```dart
+TutorialStep(
+  target: TutorialTarget.key(detailsHeaderKey),
+  beforeShow: (context, controller) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+  },
+  bubbleBuilder: (context) => const TutorialTextContent(
+    text: 'Now we are on the details screen.',
+  ),
+)
+```
+
+Tips:
+
+- Do not wait for `Navigator.push(...)` to complete before advancing; that future completes when the route is popped.
+- Avoid wiring the same navigation action in both the target widget's `onPressed` and `onTargetTap` for the active tutorial step.
+- If the route transition can be tapped repeatedly, guard against duplicate pushes in app code.
+
 ## Main API
 
 ### `TutorialBubbleOverlay`
@@ -442,6 +482,7 @@ Behavior fields:
 
 - `advanceOnBubbleTap`
 - `advanceOnOverlayTap`
+- `advanceOnTargetTap`
 - `allowTargetTap`
 - `blockOutsideTarget`
 - `onTargetTap`

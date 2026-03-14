@@ -37,6 +37,7 @@ class TutorialStepBehavior {
   const TutorialStepBehavior({
     this.advanceOnBubbleTap,
     this.advanceOnOverlayTap,
+    this.advanceOnTargetTap,
     this.allowTargetTap = true,
     this.blockOutsideTarget = true,
     this.onTargetTap,
@@ -45,6 +46,7 @@ class TutorialStepBehavior {
 
   final bool? advanceOnBubbleTap;
   final bool? advanceOnOverlayTap;
+  final bool? advanceOnTargetTap;
   final bool allowTargetTap;
   final bool blockOutsideTarget;
   final TutorialStepCallback? onTargetTap;

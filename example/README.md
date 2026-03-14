@@ -12,6 +12,7 @@ Example app for the `tutorial_bubbles` package.
   - per-step `preferredSide`
   - per-step `TutorialStepBehavior`
   - cross-screen navigation
+  - `advanceOnTargetTap` for safe route-driven progression
   - `TutorialPersistence`
 - `Reset tutorial persistence` clears saved progress and the completed flag
 
@@ -36,5 +37,6 @@ flutter test
   - the scroll chip step animates into view before the bubble appears
   - the synthetic summary band highlights a painted region instead of a child widget
   - the details navigation step follows the route transition
+  - repeated taps on the navigation step do not stack multiple details routes
   - the blocked-target step prevents target activation while the background control still works
   - the final step can complete the tutorial and suppress it on the next launch until reset

@@ -37,7 +37,8 @@ class ExampleTutorialServices {
   });
 
   final Future<void> Function(BuildContext context) navigateToDetails;
-  final Future<void> Function(BuildContext context, GlobalKey key) ensureHomeVisible;
+  final Future<void> Function(BuildContext context, GlobalKey key)
+      ensureHomeVisible;
   final Rect Function(BuildContext context) syntheticSummaryRect;
 }
 
@@ -95,7 +96,8 @@ TutorialEngineController createTutorialController(
         },
         behavior: const TutorialStepBehavior(advanceOnBubbleTap: true),
         bubbleBuilder: (context) => const TutorialTextContent(
-          text: 'This highlight uses TutorialTarget.rect for a painted summary band.',
+          text:
+              'This highlight uses TutorialTarget.rect for a painted summary band.',
           textColor: Colors.white,
         ),
         visuals: const TutorialVisuals(
@@ -111,13 +113,15 @@ TutorialEngineController createTutorialController(
         },
         behavior: TutorialStepBehavior(
           advanceOnBubbleTap: false,
+          advanceOnTargetTap: true,
           allowTargetTap: true,
           onTargetTap: (context) async {
             await services.navigateToDetails(context);
           },
         ),
         bubbleBuilder: (context) => const TutorialTextContent(
-          text: 'Tap the highlighted button. The tutorial follows the route change.',
+          text:
+              'Tap the highlighted button. The tutorial follows the route change.',
           textColor: Colors.white,
         ),
       ),
@@ -129,7 +133,8 @@ TutorialEngineController createTutorialController(
         },
         behavior: const TutorialStepBehavior(advanceOnBubbleTap: true),
         bubbleBuilder: (context) => const TutorialTextContent(
-          text: 'We are now on the details screen. beforeShow waits for the transition to settle.',
+          text:
+              'We are now on the details screen. beforeShow waits for the transition to settle.',
           textColor: Colors.white,
         ),
         visuals: const TutorialVisuals(
@@ -153,7 +158,8 @@ TutorialEngineController createTutorialController(
           },
         ),
         bubbleBuilder: (context) => const TutorialTextContent(
-          text: 'This target is intentionally blocked. Outside controls still work.',
+          text:
+              'This target is intentionally blocked. Outside controls still work.',
           textColor: Colors.white,
         ),
         visuals: const TutorialVisuals(
@@ -166,7 +172,8 @@ TutorialEngineController createTutorialController(
         target: TutorialTarget.key(keys.finishButton),
         behavior: const TutorialStepBehavior(advanceOnBubbleTap: true),
         bubbleBuilder: (context) => const TutorialTextContent(
-          text: 'Finish the tour here. Completion is saved separately from resume progress.',
+          text:
+              'Finish the tour here. Completion is saved separately from resume progress.',
           textColor: Colors.white,
         ),
       ),
@@ -176,6 +183,17 @@ TutorialEngineController createTutorialController(
 
 class TutorialFlowHomePage extends StatelessWidget {
   const TutorialFlowHomePage({super.key});
+
+  void _handleOpenDetailsPressed(BuildContext context, TutorialScope scope) {
+    final controller = scope.controller;
+    final isTutorialIntercepting = controller.isStarted &&
+        !controller.isFinished &&
+        controller.currentStep.id == 'open_details';
+    if (isTutorialIntercepting) {
+      return;
+    }
+    scope.services.navigateToDetails(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +227,8 @@ class TutorialFlowHomePage extends StatelessWidget {
                       ),
                       OutlinedButton.icon(
                         key: keys.openDetailsButton,
-                        onPressed: () => scope.services.navigateToDetails(context),
+                        onPressed: () =>
+                            _handleOpenDetailsPressed(context, scope),
                         icon: const Icon(Icons.open_in_new),
                         label: const Text('Open details'),
                       ),
@@ -274,7 +293,8 @@ class TutorialFlowDetailsPage extends StatefulWidget {
   const TutorialFlowDetailsPage({super.key});
 
   @override
-  State<TutorialFlowDetailsPage> createState() => _TutorialFlowDetailsPageState();
+  State<TutorialFlowDetailsPage> createState() =>
+      _TutorialFlowDetailsPageState();
 }
 
 class _TutorialFlowDetailsPageState extends State<TutorialFlowDetailsPage> {
