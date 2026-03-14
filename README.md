@@ -1,6 +1,6 @@
 # tutorial_bubbles
 
-Add guided tutorial bubbles and spotlights to Flutter apps.
+Guided tutorial bubbles and spotlights for Flutter apps.
 
 `tutorial_bubbles` helps you highlight widgets or virtual screen regions, point to them with a bubble, and build onboarding flows without rewriting your UI.
 
@@ -38,7 +38,7 @@ There are two main ways to use the package:
 
 ## Single spotlight
 
-Use this when you want to highlight one widget and show one bubble.
+Use this when you want a single spotlight with fully manual target measurement.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -133,7 +133,7 @@ class _SpotlightExampleState extends State<SpotlightExample> {
 
 ## Multi-step tutorial
 
-Use this when you want onboarding or guided flows.
+Use this when you want onboarding or multi-step guided flows.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -227,7 +227,7 @@ class _TutorialExampleState extends State<TutorialExample> {
 
 ### Virtual or painted targets
 
-Use `TutorialTarget.rect(...)` when the tutorial should point to a synthetic area instead of a keyed widget.
+Use `TutorialTarget.rect(...)` when the tutorial should point to a synthetic or painted area instead of a keyed widget.
 
 ```dart
 TutorialStep(
@@ -323,6 +323,8 @@ TutorialEngine(
 
 ### Step preparation with `beforeShow`
 
+Use `beforeShow` to scroll, wait for route transitions, or prepare state before the engine measures the target.
+
 ```dart
 TutorialStep(
   target: TutorialTarget.key(filterChipKey),
@@ -337,6 +339,8 @@ TutorialStep(
 ```
 
 ### Per-step interaction policy
+
+Use `TutorialStepBehavior` when a step needs different interaction rules from the rest of the tutorial.
 
 ```dart
 TutorialStep(
@@ -393,10 +397,12 @@ Main options:
 - `advanceOnBubbleTap`
 - `advanceOnOverlayTap`
 - `globalVisuals`
+- `onComplete`
+
+Compatibility options:
+
 - `persistenceId`
 - `checkpointSteps`
-- `persistence`
-- `onComplete`
 
 ### `TutorialEngineController`
 
@@ -538,7 +544,7 @@ TutorialEngine(
 )
 ```
 
-Mark a tutorial completed forever while still keeping resume separate from completion:
+Mark a tutorial completed forever while keeping resume separate from completion:
 
 ```dart
 TutorialEngine(
@@ -570,6 +576,7 @@ MaterialApp(
 ## Tips
 
 - Use `TutorialTextContent` inside overlays and step builders
+- Use `TutorialTarget.rect(...)` for painted charts, canvases, and synthetic hotspots
 - Use `TutorialHighlightShape.roundedRect(...)` for rounded buttons and cards
 - Use `TutorialBubbleSide.automatic` when you want the package to choose the best side
 - Put shared styling in `globalVisuals`, then override only special steps
